@@ -65,10 +65,39 @@ function renderCarrinho() {
     tbody.innerHTML = ""; let t = 0;
     carrinho.forEach((item, i) => {
         const sub = item.preco * item.qtd_venda; t += sub;
-        tbody.innerHTML += `<tr><td>${item.tipo}</td><td>${item.qtd_venda}</td><td>R$ ${item.preco.toFixed(2)}</td><td>R$ ${sub.toFixed(2)}</td><td><button onclick="removerItemCarrinho(${i})">❌</button></td></tr>`;
+        tbody.innerHTML += `<tr>
+            <td>${item.tipo}</td>
+            <td>${item.qtd_venda}</td>
+            <td>R$ ${item.preco.toFixed(2)}</td>
+            <td>R$ ${sub.toFixed(2)}</td>
+            <td>
+                <button onclick="abrirModalEditarItem(${i})">✏️</button>
+                <button onclick="removerItemCarrinho(${i})">❌</button>
+            </td>
+        </tr>`;
     });
     document.getElementById('total-valor').innerText = `R$ ${t.toFixed(2).replace('.',',')}`;
 }
+
+// MODAL EDITAR ITEM NO CARRINHO
+function abrirModalEditarItem(idx) {
+    const item = carrinho[idx];
+    document.getElementById('edit-carrinho-index').value = idx;
+    document.getElementById('edit-carrinho-nome').value = item.tipo;
+    document.getElementById('edit-carrinho-qtd').value = item.qtd_venda;
+    document.getElementById('edit-carrinho-preco').value = item.preco;
+    document.getElementById('modal-editar-item').style.display = 'flex';
+}
+
+function salvarEdicaoCarrinho() {
+    const idx = document.getElementById('edit-carrinho-index').value;
+    carrinho[idx].qtd_venda = parseInt(document.getElementById('edit-carrinho-qtd').value);
+    carrinho[idx].preco = parseFloat(document.getElementById('edit-carrinho-preco').value);
+    fecharModalCarrinho();
+    renderCarrinho();
+}
+
+function fecharModalCarrinho() { document.getElementById('modal-editar-item').style.display = 'none'; }
 
 async function finalizarVenda() {
     if(!carrinho.length) return alert("Carrinho vazio!");
@@ -80,7 +109,13 @@ async function finalizarVenda() {
         total: parseFloat(totalT.replace('R$ ','').replace(',','.')), produtos: carrinho.map(c => `${c.qtd_venda}x ${c.tipo}`).join(", "),
         pagamento: pgto, data_venda: new Date().toISOString()
     }]);
-    if(!error) { alert("Venda Finalizada!"); imprimirCupom(pgto, totalT); carrinho = []; renderCarrinho(); }
+    if(!error) { 
+        alert("Venda Finalizada!"); 
+        imprimirCupom(pgto, totalT); 
+        carrinho = []; 
+        renderCarrinho(); 
+        document.getElementById('venda-cliente').value = "";
+    }
     else alert("Erro: " + error.message);
 }
 
@@ -137,6 +172,7 @@ async function salvarUsuario() {
 function mostrarAba(aba) {
     document.querySelectorAll('.aba').forEach(a => a.style.display = 'none');
     document.getElementById('aba-' + aba).style.display = 'block';
+    if(aba === 'vendas') document.getElementById('venda-codigo').focus();
     if(aba === 'estoque') carregarEstoque();
     if(aba === 'historico') carregarHistorico();
     if(aba === 'usuarios') carregarUsuarios();
@@ -147,9 +183,24 @@ function aplicarPermissoesVisuais() {
     document.querySelectorAll('.somente-gerente').forEach(el => el.style.display = isG ? 'block' : 'none');
 }
 
+// CUPOM FORMATO ZEBRA/TÉRMICO (RESTAURADO)
 function imprimirCupom(pgto, total) {
     const win = window.open('','','width=320,height=600');
-    win.document.write(`<html><body style="font-family:monospace;padding:10px;"><center><b>${usuarioLogado.lojas?.nome_loja.toUpperCase()}</b><br>----------------------------<br>TOTAL: ${total}<br>PGTO: ${pgto}<br>----------------------------</center><script>window.onload=function(){window.print();window.close();};</script></body></html>`);
+    const agora = new Date().toLocaleString('pt-BR');
+    const cliente = document.getElementById('venda-cliente').value || "Consumidor";
+    const nomeLoja = usuarioLogado.lojas ? usuarioLogado.lojas.nome_loja : "GESTAO NOGUEIRA";
+    
+    win.document.write(`
+        <html><body style="font-family:'Courier New',monospace; width:280px; padding:5px; font-size:12px;">
+        <center>============================<br><b>${nomeLoja.toUpperCase()}</b><br>============================</center><br>
+        DATA: ${agora}<br>CLIENTE: ${cliente.toUpperCase()}<br>PGTO: ${pgto}<br>
+        ----------------------------<br>
+        ${carrinho.map(i => `${i.qtd_venda}x ${i.tipo.substring(0,15)} R$ ${(i.preco*i.qtd_venda).toFixed(2)}`).join('<br>')}
+        <br>----------------------------<br>
+        <b>TOTAL GERAL: ${total}</b><br><br>
+        <center>Obrigado pela preferência!</center>
+        <script>window.onload=function(){window.print();window.close();};</script></body></html>
+    `);
     win.document.close();
 }
 
