@@ -5,7 +5,7 @@ const _supabase = supabase.createClient(SB_URL, SB_KEY);
 let usuarioLogado = null;
 let carrinho = [];
 
-// --- EFEITO DE FUNDO (PARTÍCULAS) ---
+// --- EFEITO DE FUNDO ---
 if(typeof particlesJS !== 'undefined') {
     particlesJS("particles-js", { 
         "particles": { 
@@ -17,11 +17,12 @@ if(typeof particlesJS !== 'undefined') {
     });
 }
 
-// --- LOGIN COM VERIFICAÇÃO DE BLOQUEIO E CARGA DE LOJA ---
+// --- LOGIN (PEGA O ID DA LOJA) ---
 async function fazerLogin() {
     const user = document.getElementById('user').value;
     const pass = document.getElementById('pass').value;
     
+    // IMPORTANTE: Busca o usuário e os dados da loja vinculada
     const { data, error } = await _supabase
         .from('usuarios')
         .select('*, lojas(ativo, nome_loja)') 
@@ -29,24 +30,18 @@ async function fazerLogin() {
         .eq('senha', pass)
         .single();
     
-    if (error || !data) {
-        return alert("Acesso Negado! Usuário ou senha incorretos.");
-    }
+    if (error || !data) return alert("Usuário ou Senha incorretos!");
+    if (data.lojas && data.lojas.ativo === false) return alert("SISTEMA BLOQUEADO: Pendência financeira.");
+    if (!data.ativo) return alert("Usuário inativo!");
+    if (!data.loja_id) return alert("Erro crítico: Usuário sem loja vinculada.");
 
-    if (data.lojas && data.lojas.ativo === false) {
-        return alert("SISTEMA BLOQUEADO: Pendência financeira detectada. Entre em contato com o administrador.");
-    }
-
-    if (!data.ativo) return alert("Seu usuário está desativado.");
-    if (!data.loja_id) return alert("Erro: Usuário sem loja vinculada.");
-
+    // Guarda os dados do usuário e o ID da loja na memória do navegador
     usuarioLogado = data;
     const nomeLoja = data.lojas ? data.lojas.nome_loja : "Gestão Nogueira";
 
     document.getElementById('particles-js').style.display = 'none';
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('painel-admin').style.display = 'flex';
-    
     document.getElementById('user-info').innerHTML = `
         <b style="color:#d4af37">${nomeLoja.toUpperCase()}</b><br>
         Operador: ${data.login.toUpperCase()}
@@ -70,14 +65,15 @@ function mostrarAba(aba) {
     if(aba === 'usuarios') carregarUsuarios();
 }
 
-// --- VENDAS COM CARIMBO DE LOJA ---
+// --- VENDAS ---
 async function adicionarAoCarrinho() {
     const cod = document.getElementById('venda-codigo').value;
     const qtd = parseInt(document.getElementById('venda-qtd').value) || 1;
     
+    // O RLS do banco garante que só busque produtos da loja_id do usuário logado
     const { data: p } = await _supabase.from('produtos').select('*').eq('codigo_barras', cod).single();
     
-    if (!p) return alert("Produto não encontrado!");
+    if (!p) return alert("Produto não cadastrado nesta loja!");
     
     carrinho.push({ ...p, qtd_venda: qtd });
     renderCarrinho();
@@ -114,7 +110,7 @@ async function finalizarVenda() {
     const totalT = document.getElementById('total-valor').innerText;
 
     const { error } = await _supabase.from('historico_vendas').insert([{
-        loja_id: usuarioLogado.loja_id, // CARIMBO DE LOJA
+        loja_id: usuarioLogado.loja_id, // CARIMBO AUTOMÁTICO
         cliente: document.getElementById('venda-cliente').value || "Consumidor",
         total: parseFloat(totalT.replace('R$ ','').replace(',','.')),
         produtos: carrinho.map(c => `${c.qtd_venda}x ${c.tipo}`).join(", "),
@@ -128,11 +124,11 @@ async function finalizarVenda() {
         renderCarrinho();
         document.getElementById('venda-cliente').value = "";
     } else {
-        alert("Erro ao salvar venda: " + error.message);
+        alert("Erro ao salvar: " + error.message);
     }
 }
 
-// --- ESTOQUE COM CARIMBO DE LOJA ---
+// --- ESTOQUE ---
 async function carregarEstoque() {
     const { data } = await _supabase.from('produtos').select('*').order('tipo');
     const tbody = document.getElementById('corpo-estoque');
@@ -150,20 +146,28 @@ async function carregarEstoque() {
 async function salvarProduto() {
     const id = document.getElementById('edit-id-produto').value;
     const d = { 
-        loja_id: usuarioLogado.loja_id, // CARIMBO DE LOJA
+        loja_id: usuarioLogado.loja_id, // CARIMBO AUTOMÁTICO
         codigo_barras: document.getElementById('cad-codigo').value, 
         tipo: document.getElementById('cad-tipo').value, 
         preco: parseFloat(document.getElementById('cad-preco').value), 
         quantidade: parseInt(document.getElementById('cad-qtd').value) 
     };
     
-    if(id) await _supabase.from('produtos').update(d).eq('id', id); 
-    else await _supabase.from('produtos').insert([d]);
+    let error;
+    if(id) {
+        const res = await _supabase.from('produtos').update(d).eq('id', id);
+        error = res.error;
+    } else {
+        const res = await _supabase.from('produtos').insert([d]);
+        error = res.error;
+    }
     
-    fecharModalProduto(); carregarEstoque();
+    if(error) alert("Erro ao salvar produto: " + error.message);
+    fecharModalProduto(); 
+    carregarEstoque();
 }
 
-// --- USUÁRIOS COM CARIMBO DE LOJA ---
+// --- USUÁRIOS ---
 async function carregarUsuarios() {
     const { data } = await _supabase.from('usuarios').select('*').order('login');
     const tbody = document.getElementById('corpo-usuarios');
@@ -178,7 +182,7 @@ async function carregarUsuarios() {
 async function salvarUsuario() {
     const id = document.getElementById('edit-id-usuario').value;
     const d = { 
-        loja_id: usuarioLogado.loja_id, // CARIMBO DE LOJA
+        loja_id: usuarioLogado.loja_id, // CARIMBO AUTOMÁTICO
         login: document.getElementById('user-login').value, 
         senha: document.getElementById('user-senha').value, 
         nivel: document.getElementById('user-nivel').value, 
@@ -209,28 +213,7 @@ async function carregarHistorico() {
     aplicarPermissoesVisuais();
 }
 
-// --- IMPRESSÃO ---
-function imprimirCupom(pgto, total) {
-    const win = window.open('','','width=320,height=600');
-    const agora = new Date().toLocaleString('pt-BR');
-    const cliente = document.getElementById('venda-cliente').value || "Consumidor";
-    const nomeLoja = usuarioLogado.lojas ? usuarioLogado.lojas.nome_loja : "GESTAO NOGUEIRA";
-    
-    win.document.write(`
-        <html><body style="font-family:'Courier New',monospace; width:280px; padding:5px; font-size:12px;">
-        <center>============================<br><b>${nomeLoja.toUpperCase()}</b><br>============================</center><br>
-        DATA: ${agora}<br>CLIENTE: ${cliente.toUpperCase()}<br>PGTO: ${pgto}<br>
-        ----------------------------<br>
-        ${carrinho.map(i => `${i.qtd_venda}x ${i.tipo.substring(0,15)} R$ ${(i.preco*i.qtd_venda).toFixed(2)}`).join('<br>')}
-        <br>----------------------------<br>
-        <b>TOTAL GERAL: ${total}</b><br><br>
-        <center>Obrigado pela preferência!</center>
-        <script>window.onload=function(){window.print();window.close();};</script></body></html>
-    `);
-    win.document.close();
-}
-
-// --- FUNÇÕES AUXILIARES ---
+// --- MODAIS E AUXILIARES ---
 function abrirModalEditarItem(idx) {
     const item = carrinho[idx];
     document.getElementById('edit-carrinho-index').value = idx;
@@ -245,6 +228,14 @@ function salvarEdicaoCarrinho() {
     carrinho[idx].preco = parseFloat(document.getElementById('edit-carrinho-preco').value);
     document.getElementById('modal-editar-item').style.display = 'none';
     renderCarrinho();
+}
+function imprimirCupom(pgto, total) {
+    const win = window.open('','','width=320,height=600');
+    const agora = new Date().toLocaleString('pt-BR');
+    const cliente = document.getElementById('venda-cliente').value || "Consumidor";
+    const nomeLoja = usuarioLogado.lojas ? usuarioLogado.lojas.nome_loja : "GESTAO NOGUEIRA";
+    win.document.write(`<html><body style="font-family:'Courier New',monospace; width:280px; padding:5px; font-size:12px;"><center><b>${nomeLoja.toUpperCase()}</b></center><br>DATA: ${agora}<br>CLIENTE: ${cliente.toUpperCase()}<br>----------------------------<br>${carrinho.map(i => `${i.qtd_venda}x ${i.tipo.substring(0,15)} R$ ${(i.preco*i.qtd_venda).toFixed(2)}`).join('<br>')}<br>----------------------------<br><b>TOTAL: ${total}</b><br>PGTO: ${pgto}<br><script>window.onload=function(){window.print();window.close();};</script></body></html>`);
+    win.document.close();
 }
 function fecharModalCarrinho() { document.getElementById('modal-editar-item').style.display = 'none'; }
 function prepararEdicaoProduto(p) { document.getElementById('edit-id-produto').value = p.id; document.getElementById('cad-codigo').value = p.codigo_barras; document.getElementById('cad-tipo').value = p.tipo; document.getElementById('cad-preco').value = p.preco; document.getElementById('cad-qtd').value = p.quantidade; document.getElementById('modal-produto').style.display='flex'; }
