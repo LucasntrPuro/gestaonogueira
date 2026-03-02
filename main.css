@@ -1,233 +1,60 @@
-/* --- CONFIGURAÇÕES GERAIS --- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { background-color: #000; color: #fff; overflow-x: hidden; }
 
-body {
-    background-color: #0f0f0f;
-    color: #ffffff;
-    overflow-x: hidden;
-}
-
-/* --- FUNDO ANIMADO (PARTICLES) --- */
+/* ANIMAÇÃO DE FUNDO */
 #particles-js {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    z-index: -1; /* Fica atrás de tudo */
-    background-color: #0f0f0f;
+    position: fixed; width: 100%; height: 100%;
+    background-color: #000; z-index: 1; top: 0; left: 0;
 }
 
-/* --- TELA DE LOGIN --- */
-.container {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* TELA DE LOGIN */
+.container-central {
+    height: 100vh; display: flex; justify-content: center; align-items: center;
+    position: relative; z-index: 10; background: transparent;
 }
-
 .login-box {
-    background: rgba(20, 20, 20, 0.9);
-    padding: 40px;
-    border-radius: 15px;
-    border: 1px solid #d4af37;
-    text-align: center;
-    width: 350px;
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+    background: rgba(17, 17, 17, 0.9); padding: 40px; border-radius: 12px;
+    border: 1px solid #d4af37; text-align: center; width: 350px;
+    backdrop-filter: blur(10px); box-shadow: 0 0 30px rgba(212,175,55,0.2);
 }
-
-.logo { font-size: 28px; margin-bottom: 20px; }
-.logo span { color: #d4af37; font-weight: bold; }
-
 .login-box input {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #fff;
-    border-radius: 5px;
+    width: 100%; padding: 12px; margin: 10px 0;
+    background: #222; border: 1px solid #333; color: #fff; border-radius: 4px;
 }
-
 .login-box button {
-    width: 100%;
-    padding: 12px;
-    background: #d4af37;
-    border: none;
-    color: #000;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: 0.3s;
+    width: 100%; padding: 12px; background: #d4af37;
+    border: none; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px;
 }
 
-.login-box button:hover { background: #b8962d; }
+/* LAYOUT SISTEMA */
+.admin-layout { display: flex; height: 100vh; position: relative; z-index: 20; background: #000; }
+.sidebar { width: 250px; background: #111; border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
+.sidebar nav button { width: 100%; padding: 15px; background: none; border: none; color: #ccc; text-align: left; cursor: pointer; border-radius: 4px; margin-bottom: 5px; }
+.sidebar nav button:hover { background: #222; color: #d4af37; }
+.content { flex: 1; padding: 30px; overflow-y: auto; background: #0a0a0a; }
 
-/* --- ESTRUTURA DO PAINEL --- */
-#painel-admin {
-    display: flex;
-    height: 100vh;
-}
+/* TABELAS E COMPONENTES */
+.tabela-container { background: #111; border-radius: 8px; padding: 10px; margin-top: 20px; border: 1px solid #222; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 15px; color: #d4af37; border-bottom: 2px solid #222; }
+td { padding: 12px 15px; border-bottom: 1px solid #1a1a1a; font-size: 0.9rem; }
+.acoes-container { display: flex; gap: 10px; justify-content: center; }
+td button { background: none; border: none; cursor: pointer; font-size: 1.1rem; }
 
-.sidebar {
-    width: 260px;
-    background: #111;
-    border-right: 1px solid #d4af37;
-    display: flex;
-    flex-direction: column;
-}
+/* PDV */
+.pdv-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
+.pdv-inputs { background: #111; padding: 20px; border-radius: 8px; border: 1px solid #222; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+.form-group input, .form-group select { width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: #fff; border-radius: 4px; }
+.total-display { background: #1a1a1a; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #d4af37; text-align: right; }
+.total-display h1 { color: #d4af37; font-size: 2.5rem; }
 
-#user-info {
-    padding: 25px;
-    border-bottom: 1px solid #222;
-    font-size: 14px;
-}
-
-.sidebar ul { list-style: none; padding: 10px; }
-
-.sidebar li {
-    padding: 15px;
-    cursor: pointer;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    transition: 0.3s;
-}
-
-.sidebar li:hover { background: rgba(212, 175, 55, 0.1); color: #d4af37; }
-
-.conteudo {
-    flex: 1;
-    padding: 30px;
-    overflow-y: auto;
-    background: rgba(15, 15, 15, 0.8);
-}
-
-/* --- TABELAS --- */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background: #181818;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-th, td {
-    padding: 15px;
-    text-align: left;
-    border-bottom: 1px solid #222;
-}
-
-th { background: #222; color: #d4af37; text-transform: uppercase; font-size: 12px; }
-
-tr:hover { background: #1f1f1f; }
-
-/* --- BOTÕES --- */
-button {
-    padding: 8px 15px;
-    cursor: pointer;
-    border: none;
-    border-radius: 5px;
-    font-size: 13px;
-    transition: 0.2s;
-}
-
-.btn-finalizar {
-    background: #2ecc71;
-    color: #fff;
-    width: 100%;
-    margin-top: 15px;
-    font-size: 16px;
-    padding: 15px;
-}
-
-.btn-cancelar { background: #555; color: #fff; }
-.header-aba button { background: #d4af37; color: #000; font-weight: bold; }
-
-/* --- MODAIS --- */
-.modal {
-    display: none; /* JS controla isso */
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
-
-.modal-content {
-    background: #1e1e1e;
-    padding: 30px;
-    border-radius: 15px;
-    border: 1px solid #d4af37;
-    width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.modal-content input, .modal-content select {
-    padding: 12px;
-    background: #111;
-    border: 1px solid #333;
-    color: #fff;
-    border-radius: 5px;
-}
-
-.modal-btns {
-    display: flex;
-    gap: 10px;
-}
-
-.modal-btns button { flex: 1; }
-
-/* --- PDV INPUTS --- */
-.pdv-inputs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.pdv-inputs input {
-    padding: 12px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #fff;
-    border-radius: 5px;
-    flex: 1;
-}
-
-.checkout {
-    margin-top: 30px;
-    padding: 20px;
-    background: #181818;
-    border: 1px solid #222;
-    border-radius: 10px;
-    max-width: 400px;
-    margin-left: auto;
-}
-
-.checkout h3 { margin-bottom: 15px; color: #d4af37; }
-
-.checkout select, #campo-parcelas input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    background: #111;
-    color: #fff;
-    border: 1px solid #333;
-}
-
-/* --- UTILITÁRIOS --- */
-.header-aba {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.somente-gerente { border-left: 3px solid #d4af37; }
+/* MODAIS */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 3000; }
+.modal-content { background: #111; padding: 30px; border-radius: 12px; width: 450px; border: 1px solid #d4af37; }
+.modal-titulo { color: #d4af37; font-size: 1.5rem; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #222; padding-bottom: 15px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.modal-actions { display: flex; gap: 15px; margin-top: 25px; }
+.btn-salvar-modal { flex: 1; background: #d4af37; color: #000; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+.btn-cancelar-modal { flex: 1; background: #333; color: #fff; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
