@@ -1,36 +1,178 @@
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-body { background-color: #000; color: #fff; overflow-x: hidden; }
+const SB_URL = 'https://btzfjrpbzigqsifbmjnb.supabase.co'; 
+const SB_KEY = 'sb_publishable_aOC-9tDq5jpRyZM3swEmSA_2anmUryO'; 
+const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-#particles-js { position: fixed; width: 100%; height: 100%; background-color: #000; z-index: 1; top: 0; left: 0; }
+let usuarioLogado = null;
+let carrinho = [];
 
-.container-central { height: 100vh; display: flex; justify-content: center; align-items: center; position: relative; z-index: 10; }
-.login-box { background: rgba(17, 17, 17, 0.9); padding: 40px; border-radius: 12px; border: 1px solid #d4af37; text-align: center; width: 350px; box-shadow: 0 0 30px rgba(212,175,55,0.2); }
-.login-box h1 span { color: #d4af37; }
-.login-box input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #333; color: #fff; border-radius: 4px; }
+if(typeof particlesJS !== 'undefined') {
+    particlesJS("particles-js", { "particles": { "number": { "value": 60 }, "color": { "value": "#d4af37" }, "line_linked": { "color": "#d4af37" }, "move": { "speed": 1.5 } } });
+}
 
-#painel-admin { display: flex; height: 100vh; position: relative; z-index: 10; width: 100vw; }
-.sidebar { width: 250px; background: #0a0a0a; border-right: 1px solid #222; padding: 25px; flex-shrink: 0; }
-.sidebar h2 { color: #d4af37; margin-bottom: 30px; }
-.sidebar ul { list-style: none; }
-.sidebar li { padding: 15px; cursor: pointer; color: #bbb; transition: 0.3s; border-radius: 8px; }
-.sidebar li:hover { color: #d4af37; background: rgba(212,175,55,0.1); }
+async function fazerLogin() {
+    const user = document.getElementById('user').value;
+    const pass = document.getElementById('pass').value;
+    const { data, error } = await _supabase.from('usuarios').select('*').eq('login', user).eq('senha', pass).single();
+    
+    if (error || !data) return alert("Acesso Negado!");
+    if (!data.ativo) return alert("Usuário Inativo!");
 
-.conteudo { flex: 1; padding: 30px; overflow-y: auto; background: rgba(0,0,0,0.8); }
-.pdv-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
-.pdv-inputs { background: #111; padding: 20px; border-radius: 8px; border: 1px solid #222; }
+    usuarioLogado = data;
+    document.getElementById('particles-js').style.display = 'none';
+    document.getElementById('tela-login').style.display = 'none';
+    document.getElementById('painel-admin').style.display = 'flex';
+    document.getElementById('user-info').innerHTML = `Operador: <b>${data.login.toUpperCase()}</b>`;
+    
+    if(data.nivel !== 'gerente') {
+        document.querySelectorAll('.somente-gerente').forEach(el => el.style.display = 'none');
+    }
+    mostrarAba('vendas');
+}
 
-.total-display { background: #1a1a1a; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #d4af37; text-align: right; }
-.total-display h1 { color: #d4af37; font-size: 2.5rem; }
+function mostrarAba(aba) {
+    document.querySelectorAll('.aba').forEach(a => a.style.display = 'none');
+    document.getElementById('aba-' + aba).style.display = 'block';
+    if(aba === 'estoque') carregarEstoque();
+    if(aba === 'historico') carregarHistorico();
+    if(aba === 'usuarios') carregarUsuarios();
+}
 
-.tabela-dark { width: 100%; border-collapse: collapse; margin-top: 10px; }
-.tabela-dark th { color: #d4af37; text-align: left; padding: 12px; border-bottom: 2px solid #222; }
-.tabela-dark td { padding: 12px; border-bottom: 1px solid #222; }
+// --- PDV ---
+async function adicionarAoCarrinho() {
+    const cod = document.getElementById('venda-codigo').value;
+    const qtd = parseInt(document.getElementById('venda-qtd').value) || 1;
+    if(!cod) return;
+    const { data: p } = await _supabase.from('produtos').select('*').eq('codigo_barras', cod).single();
+    if(!p) return alert("Produto não encontrado!");
+    carrinho.push({ ...p, qtd_venda: qtd });
+    renderCarrinho();
+    document.getElementById('venda-codigo').value = "";
+}
 
-button { background: #d4af37; color: #000; border: none; padding: 10px 15px; border-radius: 4px; font-weight: 600; cursor: pointer; }
-.btn-finalizar { background: #2ecc71; color: #fff; width: 100%; padding: 15px; font-size: 1.1rem; }
+function renderCarrinho() {
+    const tbody = document.getElementById('corpo-carrinho');
+    tbody.innerHTML = ""; let total = 0;
+    carrinho.forEach((item, i) => {
+        const sub = item.preco * item.qtd_venda; total += sub;
+        tbody.innerHTML += `<tr><td>${item.tipo}</td><td>${item.qtd_venda}</td><td>R$ ${item.preco.toFixed(2)}</td><td>R$ ${sub.toFixed(2)}</td><td><button onclick="removerItemCarrinho(${i})">❌</button></td></tr>`;
+    });
+    document.getElementById('total-valor').innerText = `R$ ${total.toFixed(2)}`;
+}
 
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 3000; }
-.modal-content { background: #111; padding: 30px; border-radius: 12px; border: 1px solid #d4af37; width: 400px; }
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
-.form-group input, .form-group select { width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: #fff; }
+async function finalizarVenda() {
+    if(carrinho.length === 0) return;
+    const total = carrinho.reduce((acc, cur) => acc + (cur.preco * cur.qtd_venda), 0);
+    const novaVenda = {
+        data: new Date().toISOString(),
+        cliente: document.getElementById('venda-cliente').value || "Consumidor Final",
+        total: total,
+        pagamento: document.getElementById('venda-pagamento').value,
+        itens: carrinho
+    };
+    const { error } = await _supabase.from('historico_vendas').insert([novaVenda]);
+    if(!error) {
+        for(const item of carrinho) {
+            const { data: prod } = await _supabase.from('produtos').select('qtd').eq('id', item.id).single();
+            await _supabase.from('produtos').update({ qtd: prod.qtd - item.qtd_venda }).eq('id', item.id);
+        }
+        alert("Venda realizada!");
+        carrinho = []; renderCarrinho();
+    }
+}
+
+// --- ESTOQUE ---
+async function carregarEstoque() {
+    const { data } = await _supabase.from('produtos').select('*').order('tipo');
+    const tbody = document.getElementById('corpo-estoque');
+    tbody.innerHTML = "";
+    data.forEach(p => {
+        tbody.innerHTML += `<tr><td>${p.codigo_barras}</td><td>${p.tipo}</td><td>R$ ${p.preco.toFixed(2)}</td><td>${p.qtd}</td><td class="somente-gerente"><button onclick='editarProduto(${JSON.stringify(p)})'>✏️</button> <button onclick="excluirProduto(${p.id})">🗑️</button></td></tr>`;
+    });
+}
+
+// --- HISTÓRICO COM ESTORNO ---
+async function carregarHistorico() {
+    const { data } = await _supabase.from('historico_vendas').select('*').order('data', { ascending: false });
+    const tbody = document.querySelector("#aba-historico tbody");
+    tbody.innerHTML = "";
+    data.forEach(v => {
+        tbody.innerHTML += `<tr>
+            <td>${new Date(v.data).toLocaleString()}</td>
+            <td>${v.cliente}</td>
+            <td>${v.pagamento}</td>
+            <td>R$ ${v.total.toFixed(2)}</td>
+            <td><button onclick="excluirVenda(${v.id})" style="background:#ff4d4d">Excluir</button></td>
+        </tr>`;
+    });
+}
+
+async function excluirVenda(id) {
+    if(!confirm("Deseja excluir? O stock será devolvido.")) return;
+    const { data: venda } = await _supabase.from('historico_vendas').select('itens').eq('id', id).single();
+    for(const item of venda.itens) {
+        const { data: p } = await _supabase.from('produtos').select('qtd').eq('codigo_barras', item.codigo_barras).single();
+        if(p) await _supabase.from('produtos').update({ qtd: p.qtd + item.qtd_venda }).eq('codigo_barras', item.codigo_barras);
+    }
+    await _supabase.from('historico_vendas').delete().eq('id', id);
+    carregarHistorico();
+}
+
+// --- USUÁRIOS ---
+async function carregarUsuarios() {
+    const { data } = await _supabase.from('usuarios').select('*').order('login');
+    const tbody = document.getElementById('corpo-usuarios');
+    tbody.innerHTML = "";
+    data.forEach(u => {
+        const cor = u.ativo ? '#2ecc71' : '#ff4d4d';
+        tbody.innerHTML += `<tr>
+            <td>${u.login}</td>
+            <td>${u.nivel.toUpperCase()}</td>
+            <td><span style="height:10px;width:10px;background-color:${cor};border-radius:50%;display:inline-block;"></span> ${u.ativo ? 'Ativo' : 'Inativo'}</td>
+            <td><button onclick='editarUsuario(${JSON.stringify(u)})'>✏️</button> <button onclick="excluirUsuario(${u.id})">🗑️</button></td>
+        </tr>`;
+    });
+}
+
+async function salvarUsuario() {
+    const id = document.getElementById('edit-id-usuario').value;
+    const u = {
+        login: document.getElementById('user-login').value,
+        senha: document.getElementById('user-senha').value,
+        nivel: document.getElementById('user-nivel').value,
+        ativo: document.getElementById('user-status').value === 'true'
+    };
+    if(id) await _supabase.from('usuarios').update(u).eq('id', id);
+    else await _supabase.from('usuarios').insert([u]);
+    fecharModalUsuario(); carregarUsuarios();
+}
+
+// --- AUXILIARES ---
+function abrirModalUsuario() { 
+    document.getElementById('edit-id-usuario').value=""; 
+    document.getElementById('user-login').value="";
+    document.getElementById('user-senha').value="";
+    document.getElementById('modal-usuario').style.display='flex'; 
+}
+function editarUsuario(u) {
+    document.getElementById('edit-id-usuario').value=u.id;
+    document.getElementById('user-login').value=u.login;
+    document.getElementById('user-senha').value=u.senha;
+    document.getElementById('user-nivel').value=u.nivel;
+    document.getElementById('user-status').value=u.ativo.toString();
+    document.getElementById('modal-usuario').style.display='flex';
+}
+function fecharModalUsuario() { document.getElementById('modal-usuario').style.display='none'; }
+function editarProduto(p) {
+    document.getElementById('edit-id-produto').value=p.id;
+    document.getElementById('cad-codigo').value=p.codigo_barras;
+    document.getElementById('cad-tipo').value=p.tipo;
+    document.getElementById('cad-preco').value=p.preco;
+    document.getElementById('cad-qtd').value=p.qtd;
+    document.getElementById('modal-produto').style.display='flex';
+}
+function abrirModalProduto() { document.getElementById('edit-id-produto').value=""; document.getElementById('modal-produto').style.display='flex'; }
+function fecharModalProduto() { document.getElementById('modal-produto').style.display='none'; }
+function removerItemCarrinho(i) { carrinho.splice(i,1); renderCarrinho(); }
+async function excluirUsuario(id) { if(confirm(\"Excluir?\")) { await _supabase.from('usuarios').delete().eq('id', id); carregarUsuarios(); } }
+async function excluirProduto(id) { if(confirm(\"Excluir?\")) { await _supabase.from('produtos').delete().eq('id', id); carregarEstoque(); } }
+function atalhosTeclado(e) { if(e.key === "F9") finalizarVenda(); }
