@@ -15,138 +15,109 @@
 </head>
 <body onkeydown="atalhosTeclado(event)">
 
-    <div id="particles-js" style="position: fixed; width: 100%; height: 100%; background-color: #000; z-index: 1;"></div>
+    <div id="particles-js"></div>
 
-    <div id="tela-login" class="container-central" style="position: relative; z-index: 10;">
+    <div id="tela-login" class="container-central">
         <div class="login-box">
-            <h2 style="color: #d4af37; margin-bottom: 20px;">GESTÃO NOGUEIRA</h2>
+            <h1>Gestão <span>Nogueira</span></h1>
             <input type="text" id="user" placeholder="Usuário" autofocus>
-            <input type="password" id="pass" placeholder="Senha" onkeypress="if(event.key==='Enter') fazerLogin()">
+            <input type="password" id="pass" placeholder="Senha">
             <button onclick="fazerLogin()">ENTRAR</button>
         </div>
     </div>
 
-    <div id="painel-admin" style="display: none;" class="admin-layout">
+    <div id="painel-admin" style="display: none;">
         <aside class="sidebar">
-            <div class="perfil">
-                <h2 style="color: #d4af37;">G. Nogueira</h2>
-                <p id="user-info" style="font-size: 0.8rem; color: #888; margin-bottom: 20px;"></p>
-            </div>
-            <nav>
-                <button onclick="mostrarAba('vendas')">📦 Vendas (F1)</button>
-                <button onclick="mostrarAba('estoque')">📋 Estoque</button>
-                <button onclick="mostrarAba('historico')">🧾 Histórico</button>
-                <button class="somente-gerente" onclick="mostrarAba('usuarios')">👥 Usuários</button>
-                <button onclick="location.reload()" style="margin-top: auto; color: #ff4d4d;">🚪 Sair</button>
-            </nav>
+            <h2>G. Nogueira</h2>
+            <div id="user-info" style="font-size: 0.8rem; color: #888; margin-bottom: 20px;"></div>
+            <ul>
+                <li onclick="mostrarAba('vendas')">🛒 PDV / Vendas</li>
+                <li onclick="mostrarAba('estoque')">📦 Estoque</li>
+                <li onclick="mostrarAba('historico')">📊 Histórico</li>
+                <li onclick="mostrarAba('usuarios')" class="somente-gerente">👥 Usuários</li>
+                <li onclick="location.reload()" style="color: #ff4d4d; margin-top: auto;">🚪 Sair</li>
+            </ul>
         </aside>
 
-        <main class="content">
+        <main class="conteudo">
             <section id="aba-vendas" class="aba">
                 <div class="pdv-grid">
                     <div class="pdv-inputs">
-                        <div class="form-group"><label>Cliente</label><input type="text" id="venda-cliente" placeholder="Consumidor"></div>
-                        <div class="form-group"><label>Código do Produto</label><input type="text" id="venda-codigo" onkeypress="if(event.key==='Enter') adicionarAoCarrinho()"></div>
-                        <div class="form-group"><label>Quantidade</label><input type="number" id="venda-qtd" value="1"></div>
-                        
+                        <h2 style="color: #d4af37; margin-bottom: 20px;">Caixa</h2>
                         <div class="form-group">
-                            <label>Pagamento</label>
+                            <label>Cliente</label>
+                            <input type="text" id="venda-cliente" placeholder="Consumidor Final">
+                        </div>
+                        <div class="form-group">
+                            <label>Cód. Barras</label>
+                            <input type="text" id="venda-codigo" placeholder="Aponte o leitor...">
+                        </div>
+                        <div class="form-group">
+                            <label>Qtd</label>
+                            <input type="number" id="venda-qtd" value="1">
+                        </div>
+                        <button onclick="adicionarAoCarrinho()" style="width: 100%;">ADICIONAR</button>
+                    </div>
+                    <div class="pdv-lista">
+                        <div class="total-display">
+                            <p>Total da Venda</p>
+                            <h1 id="total-valor">R$ 0,00</h1>
+                        </div>
+                        <table class="tabela-dark">
+                            <thead>
+                                <tr><th>Produto</th><th>Qtd</th><th>Preço</th><th>Total</th><th>Ações</th></tr>
+                            </thead>
+                            <tbody id="corpo-carrinho"></tbody>
+                        </table>
+                        <div class="finalizar-box" style="margin-top:20px; display:flex; gap:10px;">
                             <select id="venda-pagamento" onchange="verificarParcelas()">
                                 <option value="Dinheiro">Dinheiro</option>
                                 <option value="Pix">Pix</option>
                                 <option value="Cartão de Débito">Cartão de Débito</option>
                                 <option value="Cartão de Crédito">Cartão de Crédito</option>
                             </select>
-                        </div>
-                        <div id="campo-parcelas" class="form-group" style="display:none;">
-                            <label>Parcelas</label>
-                            <select id="venda-parcelas">
-                                <option value="1">1x</option><option value="2">2x</option><option value="3">3x</option>
-                                <option value="4">4x</option><option value="5">5x</option><option value="6">6x</option>
-                                <option value="7">7x</option><option value="8">8x</option><option value="9">9x</option>
-                                <option value="10">10x</option><option value="11">11x</option><option value="12">12x</option>
-                            </select>
-                        </div>
-
-                        <button onclick="adicionarAoCarrinho()" style="width:100%; background:#222; color:#d4af37; border:1px solid #d4af37; padding:12px; margin-bottom:10px; cursor:pointer; font-weight:bold; border-radius:4px;">+ LANÇAR ITEM (Enter)</button>
-                        <button onclick="finalizarVenda()" style="width:100%; background:#d4af37; color:#000; font-weight:bold; padding:15px; border:none; border-radius:4px; cursor:pointer;">FINALIZAR VENDA (F2)</button>
-                    </div>
-
-                    <div class="pdv-lista">
-                        <div class="total-display"><p>TOTAL DA VENDA</p><h1 id="total-valor">R$ 0,00</h1></div>
-                        <div class="tabela-container">
-                            <table>
-                                <thead><tr><th>Produto</th><th>Qtd</th><th>Unit.</th><th>Subtotal</th><th>Ações</th></tr></thead>
-                                <tbody id="corpo-carrinho"></tbody>
-                            </table>
+                            <button onclick="finalizarVenda()" class="btn-finalizar" style="flex:1;">FINALIZAR (F9)</button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="aba-estoque" class="aba" style="display:none;">
+            <section id="aba-estoque" class="aba" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>Estoque</h2>
-                    <button class="somente-gerente" onclick="abrirModalProduto()" style="background:#d4af37; color:#000; padding:10px 20px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">+ NOVO PRODUTO</button>
+                    <button class="somente-gerente" onclick="abrirModalProduto()">+ NOVO PRODUTO</button>
                 </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead><tr><th>Cód. Barras</th><th>Descrição</th><th>Preço</th><th>Qtd</th><th class="somente-gerente">Ações</th></tr></thead>
-                        <tbody id="corpo-estoque"></tbody>
-                    </table>
-                </div>
+                <table class="tabela-dark">
+                    <thead><tr><th>Cód. Barras</th><th>Descrição</th><th>Preço</th><th>Qtd</th><th class="somente-gerente">Ações</th></tr></thead>
+                    <tbody id="corpo-estoque"></tbody>
+                </table>
             </section>
 
-            <section id="aba-historico" class="aba" style="display:none;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
+            <section id="aba-historico" class="aba" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Histórico de Vendas</h2>
                     <div>
-                        <h2>Histórico</h2>
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <input type="date" id="filtro-inicio" onchange="carregarHistorico()">
-                            <input type="date" id="filtro-fim" onchange="carregarHistorico()">
-                        </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <h3 id="total-historico" style="color: #d4af37; margin-bottom: 10px;">R$ 0,00</h3>
-                        <button onclick="gerarPDF()" style="background:#e74c3c; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">PDF</button>
-                        <button onclick="gerarExcel()" style="background:#27ae60; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">EXCEL</button>
+                        <button onclick="gerarPDF()">PDF</button>
+                        <button onclick="gerarExcel()">Excel</button>
                     </div>
                 </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead><tr><th>Data</th><th>Cliente</th><th>Produtos</th><th>Pgto</th><th>Total</th><th class="somente-gerente">Ação</th></tr></thead>
-                        <tbody id="corpo-historico"></tbody>
-                    </table>
-                </div>
+                <table class="tabela-dark">
+                    <thead><tr><th>Data</th><th>Cliente</th><th>Pagamento</th><th>Total</th><th>Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
             </section>
 
-            <section id="aba-usuarios" class="aba" style="display:none;">
+            <section id="aba-usuarios" class="aba" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>Usuários</h2>
-                    <button onclick="abrirModalUsuario()" style="background:#d4af37; color:#000; padding:10px 20px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">+ NOVO USUÁRIO</button>
+                    <button class="somente-gerente" onclick="abrirModalUsuario()">+ NOVO USUÁRIO</button>
                 </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead><tr><th>Login</th><th>Nível</th><th>Status</th><th>Ações</th></tr></thead>
-                        <tbody id="corpo-usuarios"></tbody>
-                    </table>
-                </div>
+                <table class="tabela-dark">
+                    <thead><tr><th>Login</th><th>Nível</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody id="corpo-usuarios"></tbody>
+                </table>
             </section>
         </main>
-    </div>
-
-    <div id="modal-editar-item" class="modal">
-        <div class="modal-content">
-            <h3 class="modal-titulo">Editar Item Lançado</h3>
-            <input type="hidden" id="edit-carrinho-index">
-            <div class="form-group"><label>Produto</label><input type="text" id="edit-carrinho-nome" disabled style="background:#222; color:#888;"></div>
-            <div class="form-group"><label>Quantidade</label><input type="number" id="edit-carrinho-qtd"></div>
-            <div class="form-group"><label>Preço (R$)</label><input type="number" id="edit-carrinho-preco" step="0.01"></div>
-            <div class="modal-actions" style="margin-top:20px; display:flex; gap:10px;">
-                <button onclick="salvarEdicaoCarrinho()" class="btn-salvar-modal">ATUALIZAR</button>
-                <button onclick="fecharModalCarrinho()" class="btn-cancelar-modal">VOLTAR</button>
-            </div>
-        </div>
     </div>
 
     <div id="modal-produto" class="modal">
@@ -158,8 +129,8 @@
             <div class="form-group"><label>Preço</label><input type="number" id="cad-preco" step="0.01"></div>
             <div class="form-group"><label>Qtd</label><input type="number" id="cad-qtd"></div>
             <div class="modal-actions" style="margin-top:20px; display:flex; gap:10px;">
-                <button onclick="salvarProduto()" class="btn-salvar-modal">GRAVAR</button>
-                <button onclick="fecharModalProduto()" class="btn-cancelar-modal">VOLTAR</button>
+                <button onclick="salvarProduto()">GRAVAR</button>
+                <button onclick="fecharModalProduto()" style="background:#444;">VOLTAR</button>
             </div>
         </div>
     </div>
@@ -170,11 +141,21 @@
             <input type="hidden" id="edit-id-usuario">
             <div class="form-group"><label>Login</label><input type="text" id="user-login"></div>
             <div class="form-group"><label>Senha</label><input type="password" id="user-senha"></div>
-            <div class="form-group"><label>Nível</label><select id="user-nivel"><option value="operador">Operador</option><option value="gerente">Gerente</option></select></div>
-            <div class="form-group"><label>Status</label><select id="user-status"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+            <div class="form-group"><label>Nível</label>
+                <select id="user-nivel">
+                    <option value="operador">Operador</option>
+                    <option value="gerente">Gerente</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Status</label>
+                <select id="user-status">
+                    <option value="true">Ativo</option>
+                    <option value="false">Inativo</option>
+                </select>
+            </div>
             <div class="modal-actions" style="margin-top:20px; display:flex; gap:10px;">
-                <button onclick="salvarUsuario()" class="btn-salvar-modal">GRAVAR</button>
-                <button onclick="fecharModalUsuario()" class="btn-cancelar-modal">VOLTAR</button>
+                <button onclick="salvarUsuario()">GRAVAR</button>
+                <button onclick="fecharModalUsuario()" style="background:#444;">VOLTAR</button>
             </div>
         </div>
     </div>
