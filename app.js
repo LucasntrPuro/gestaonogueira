@@ -170,7 +170,37 @@ async function carregarUsuarios() {
     });
 }
 
-// --- AUXILIARES ---
+async function salvarUsuario() {
+    const id = document.getElementById('edit-id-usuario').value;
+    const d = { 
+        login: document.getElementById('user-login').value, 
+        senha: document.getElementById('user-senha').value, 
+        nivel: document.getElementById('user-nivel').value, 
+        ativo: document.getElementById('user-status').value === "true",
+        loja_id: LOJA_ID_ATUAL
+    };
+    if(id) await _supabase.from('usuarios').update(d).eq('id', id).eq('loja_id', LOJA_ID_ATUAL); 
+    else await _supabase.from('usuarios').insert([d]);
+    fecharModalUsuario(); carregarUsuarios();
+}
+
+// --- AUXILIARES E MODAIS (CORREÇÃO AQUI) ---
+function abrirModalProduto() { 
+    document.getElementById('edit-id-produto').value = ""; 
+    document.getElementById('cad-codigo').value = "";
+    document.getElementById('cad-tipo').value = "";
+    document.getElementById('cad-preco').value = "";
+    document.getElementById('cad-qtd').value = "";
+    document.getElementById('modal-produto').style.display='flex'; 
+}
+
+function abrirModalUsuario() { 
+    document.getElementById('edit-id-usuario').value = ""; 
+    document.getElementById('user-login').value = "";
+    document.getElementById('user-senha').value = "";
+    document.getElementById('modal-usuario').style.display='flex'; 
+}
+
 function prepararEdicaoProduto(p) { document.getElementById('edit-id-produto').value = p.id; document.getElementById('cad-codigo').value = p.codigo_barras; document.getElementById('cad-tipo').value = p.tipo; document.getElementById('cad-preco').value = p.preco; document.getElementById('cad-qtd').value = p.quantidade; document.getElementById('modal-produto').style.display='flex'; }
 function prepararEdicaoUsuario(u) { document.getElementById('edit-id-usuario').value = u.id; document.getElementById('user-login').value = u.login; document.getElementById('user-senha').value = u.senha; document.getElementById('user-nivel').value = u.nivel; document.getElementById('user-status').value = u.ativo.toString(); document.getElementById('modal-usuario').style.display='flex'; }
 function fecharModalProduto() { document.getElementById('modal-produto').style.display='none'; }
