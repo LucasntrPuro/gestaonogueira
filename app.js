@@ -1,267 +1,36 @@
-const SB_URL = 'https://btzfjrpbzigqsifbmjnb.supabase.co'; 
-const SB_KEY = 'sb_publishable_aOC-9tDq5jpRyZM3swEmSA_2anmUryO'; 
-const _supabase = supabase.createClient(SB_URL, SB_KEY);
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { background-color: #000; color: #fff; overflow-x: hidden; }
 
-let usuarioLogado = null;
-let carrinho = [];
+#particles-js { position: fixed; width: 100%; height: 100%; background-color: #000; z-index: 1; top: 0; left: 0; }
 
-// --- EFEITO PARTICULAS ---
-if(typeof particlesJS !== 'undefined') {
-    particlesJS("particles-js", { "particles": { "number": { "value": 60 }, "color": { "value": "#d4af37" }, "line_linked": { "color": "#d4af37" }, "move": { "speed": 1.5 } } });
-}
+.container-central { height: 100vh; display: flex; justify-content: center; align-items: center; position: relative; z-index: 10; }
+.login-box { background: rgba(17, 17, 17, 0.9); padding: 40px; border-radius: 12px; border: 1px solid #d4af37; text-align: center; width: 350px; box-shadow: 0 0 30px rgba(212,175,55,0.2); }
+.login-box h1 span { color: #d4af37; }
+.login-box input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #333; color: #fff; border-radius: 4px; }
 
-// --- LOGIN ---
-async function fazerLogin() {
-    const user = document.getElementById('user').value;
-    const pass = document.getElementById('pass').value;
-    const { data, error } = await _supabase.from('usuarios').select('*').eq('login', user).eq('senha', pass).single();
-    
-    if (error || !data) return alert("Acesso Negado!");
-    if (!data.ativo) return alert("Usuário Inativo!");
+#painel-admin { display: flex; height: 100vh; position: relative; z-index: 10; width: 100vw; }
+.sidebar { width: 250px; background: #0a0a0a; border-right: 1px solid #222; padding: 25px; flex-shrink: 0; }
+.sidebar h2 { color: #d4af37; margin-bottom: 30px; }
+.sidebar ul { list-style: none; }
+.sidebar li { padding: 15px; cursor: pointer; color: #bbb; transition: 0.3s; border-radius: 8px; }
+.sidebar li:hover { color: #d4af37; background: rgba(212,175,55,0.1); }
 
-    usuarioLogado = data;
-    document.getElementById('particles-js').style.display = 'none';
-    document.getElementById('tela-login').style.display = 'none';
-    document.getElementById('painel-admin').style.display = 'flex';
-    document.getElementById('user-info').innerHTML = `Operador: <b>${data.login.toUpperCase()}</b> | Nível: ${data.nivel}`;
-    
-    if(data.nivel !== 'gerente') {
-        document.querySelectorAll('.somente-gerente').forEach(el => el.style.display = 'none');
-    }
-    mostrarAba('vendas');
-}
+.conteudo { flex: 1; padding: 30px; overflow-y: auto; background: rgba(0,0,0,0.8); }
+.pdv-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
+.pdv-inputs { background: #111; padding: 20px; border-radius: 8px; border: 1px solid #222; }
 
-// --- NAVEGAÇÃO ---
-function mostrarAba(aba) {
-    document.querySelectorAll('.aba').forEach(a => a.style.display = 'none');
-    document.getElementById('aba-' + aba).style.display = 'block';
-    if(aba === 'estoque') carregarEstoque();
-    if(aba === 'historico') carregarHistorico();
-    if(aba === 'usuarios') carregarUsuarios();
-}
+.total-display { background: #1a1a1a; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #d4af37; text-align: right; }
+.total-display h1 { color: #d4af37; font-size: 2.5rem; }
 
-// --- PDV / VENDAS ---
-async function adicionarAoCarrinho() {
-    const cod = document.getElementById('venda-codigo').value;
-    const qtd = parseInt(document.getElementById('venda-qtd').value) || 1;
-    if(!cod) return;
+.tabela-dark { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.tabela-dark th { color: #d4af37; text-align: left; padding: 12px; border-bottom: 2px solid #222; }
+.tabela-dark td { padding: 12px; border-bottom: 1px solid #222; }
 
-    const { data: p, error } = await _supabase.from('produtos').select('*').eq('codigo_barras', cod).single();
-    if(!p) return alert("Produto não encontrado!");
-    if(p.qtd < qtd) return alert("Estoque insuficiente!");
+button { background: #d4af37; color: #000; border: none; padding: 10px 15px; border-radius: 4px; font-weight: 600; cursor: pointer; }
+.btn-finalizar { background: #2ecc71; color: #fff; width: 100%; padding: 15px; font-size: 1.1rem; }
 
-    carrinho.push({ ...p, qtd_venda: qtd });
-    renderCarrinho();
-    document.getElementById('venda-codigo').value = "";
-    document.getElementById('venda-codigo').focus();
-}
-
-function renderCarrinho() {
-    const tbody = document.getElementById('corpo-carrinho');
-    tbody.innerHTML = "";
-    let total = 0;
-    carrinho.forEach((item, i) => {
-        const sub = item.preco * item.qtd_venda;
-        total += sub;
-        tbody.innerHTML += `<tr>
-            <td>${item.tipo}</td>
-            <td>${item.qtd_venda}</td>
-            <td>R$ ${item.preco.toFixed(2)}</td>
-            <td>R$ ${sub.toFixed(2)}</td>
-            <td><button onclick="removerItemCarrinho(${i})">❌</button></td>
-        </tr>`;
-    });
-    document.getElementById('total-valor').innerText = `R$ ${total.toFixed(2)}`;
-}
-
-async function finalizarVenda() {
-    if(carrinho.length === 0) return alert("Carrinho vazio!");
-    const total = carrinho.reduce((acc, cur) => acc + (cur.preco * cur.qtd_venda), 0);
-    const cliente = document.getElementById('venda-cliente').value || "Consumidor Final";
-    const pagamento = document.getElementById('venda-pagamento').value;
-
-    const novaVenda = {
-        data: new Date().toISOString(),
-        cliente,
-        total,
-        pagamento,
-        operador: usuarioLogado.login,
-        itens: carrinho
-    };
-
-    const { error } = await _supabase.from('historico_vendas').insert([novaVenda]);
-    if(error) return alert("Erro ao salvar venda");
-
-    for(const item of carrinho) {
-        const novaQtd = item.qtd - item.qtd_venda;
-        await _supabase.from('produtos').update({ qtd: novaQtd }).eq('id', item.id);
-    }
-
-    alert("Venda Finalizada!");
-    carrinho = [];
-    renderCarrinho();
-    document.getElementById('venda-cliente').value = "";
-}
-
-// --- ESTOQUE ---
-async function carregarEstoque() {
-    const { data, error } = await _supabase.from('produtos').select('*').order('tipo');
-    const tbody = document.getElementById('corpo-estoque');
-    tbody.innerHTML = "";
-    data.forEach(p => {
-        tbody.innerHTML += `<tr>
-            <td>${p.codigo_barras}</td>
-            <td>${p.tipo}</td>
-            <td>R$ ${p.preco.toFixed(2)}</td>
-            <td>${p.qtd}</td>
-            <td class="somente-gerente">
-                <button onclick='editarProduto(${JSON.stringify(p)})'>✏️</button>
-                <button onclick="excluirProduto(${p.id})">🗑️</button>
-            </td>
-        </tr>`;
-    });
-}
-
-async function salvarProduto() {
-    const id = document.getElementById('edit-id-produto').value;
-    const p = {
-        codigo_barras: document.getElementById('cad-codigo').value,
-        tipo: document.getElementById('cad-tipo').value,
-        preco: parseFloat(document.getElementById('cad-preco').value),
-        qtd: parseInt(document.getElementById('cad-qtd').value)
-    };
-
-    if(id) await _supabase.from('produtos').update(p).eq('id', id);
-    else await _supabase.from('produtos').insert([p]);
-
-    fecharModalProduto();
-    carregarEstoque();
-}
-
-// --- HISTÓRICO E EXCLUSÃO COM RETORNO DE ESTOQUE ---
-async function carregarHistorico() {
-    const { data, error } = await _supabase.from('historico_vendas').select('*').order('data', { ascending: false });
-    const tbody = document.querySelector("#aba-historico tbody");
-    tbody.innerHTML = "";
-    data.forEach(v => {
-        const dataF = new Date(v.data).toLocaleString();
-        tbody.innerHTML += `<tr>
-            <td>${dataF}</td>
-            <td>${v.cliente}</td>
-            <td>${v.pagamento}</td>
-            <td>R$ ${v.total.toFixed(2)}</td>
-            <td><button onclick="excluirVenda(${v.id})" style="background:#ff4d4d">Excluir</button></td>
-        </tr>`;
-    });
-}
-
-async function excluirVenda(id) {
-    if (confirm("Tem a certeza que deseja excluir esta venda? O estoque dos itens será devolvido automaticamente.")) {
-        try {
-            // 1. Procurar os dados da venda para saber o que devolver
-            const { data: venda, error: errVenda } = await _supabase
-                .from('historico_vendas')
-                .select('itens')
-                .eq('id', id)
-                .single();
-
-            if (errVenda) throw errVenda;
-
-            // 2. Devolver cada item ao estoque
-            for (const item of venda.itens) {
-                const { data: prodAtual } = await _supabase
-                    .from('produtos')
-                    .select('qtd')
-                    .eq('codigo_barras', item.codigo_barras)
-                    .single();
-
-                if (prodAtual) {
-                    const novaQtd = Number(prodAtual.qtd) + Number(item.qtd_venda);
-                    await _supabase
-                        .from('produtos')
-                        .update({ qtd: novaQtd })
-                        .eq('codigo_barras', item.codigo_barras);
-                }
-            }
-
-            // 3. Apagar a venda do histórico
-            await _supabase.from('historico_vendas').delete().eq('id', id);
-            
-            alert("Venda estornada e estoque atualizado!");
-            carregarHistorico();
-            carregarEstoque();
-        } catch (e) {
-            console.error(e);
-            alert("Erro ao processar o estorno.");
-        }
-    }
-}
-
-// --- USUÁRIOS ---
-async function carregarUsuarios() {
-    const { data } = await _supabase.from('usuarios').select('*');
-    const tbody = document.getElementById('corpo-usuarios');
-    tbody.innerHTML = "";
-    data.forEach(u => {
-        tbody.innerHTML += `<tr>
-            <td>${u.login}</td>
-            <td>${u.nivel}</td>
-            <td>${u.ativo ? 'Sim' : 'Não'}</td>
-            <td><button onclick="excluirUsuario(${u.id})">🗑️</button></td>
-        </tr>`;
-    });
-}
-
-async function salvarUsuario() {
-    const u = {
-        login: document.getElementById('user-login').value,
-        senha: document.getElementById('user-senha').value,
-        nivel: document.getElementById('user-nivel').value,
-        ativo: document.getElementById('user-status').value === 'true'
-    };
-    await _supabase.from('usuarios').insert([u]);
-    fecharModalUsuario();
-    carregarUsuarios();
-}
-
-// --- AUXILIARES E MODAIS ---
-function atalhosTeclado(e) {
-    if(e.key === "F9") finalizarVenda();
-    if(e.key === "Enter" && document.activeElement.id === "venda-codigo") adicionarAoCarrinho();
-}
-
-function abrirModalProduto() { 
-    document.getElementById('edit-id-produto').value=""; 
-    document.getElementById('modal-produto').style.display='flex'; 
-}
-
-function editarProduto(p) {
-    document.getElementById('edit-id-produto').value = p.id;
-    document.getElementById('cad-codigo').value = p.codigo_barras;
-    document.getElementById('cad-tipo').value = p.tipo;
-    document.getElementById('cad-preco').value = p.preco;
-    document.getElementById('cad-qtd').value = p.qtd;
-    document.getElementById('modal-produto').style.display='flex';
-}
-
-function fecharModalProduto() { document.getElementById('modal-produto').style.display='none'; }
-function fecharModalUsuario() { document.getElementById('modal-usuario').style.display='none'; }
-function removerItemCarrinho(i) { carrinho.splice(i,1); renderCarrinho(); }
-function verificarParcelas() { document.getElementById('campo-parcelas').style.display = (document.getElementById('venda-pagamento').value === "Cartão de Crédito") ? "block" : "none"; }
-
-async function excluirUsuario(id) { if(confirm("Excluir?")) { await _supabase.from('usuarios').delete().eq('id', id); carregarUsuarios(); } }
-async function excluirProduto(id) { if(confirm("Excluir?")) { await _supabase.from('produtos').delete().eq('id', id); carregarEstoque(); } }
-
-// --- EXPORTAÇÃO ---
-function gerarPDF() { 
-    const { jsPDF } = window.jspdf; 
-    const doc = new jsPDF(); 
-    doc.text("Vendas Gestão Nogueira", 10, 10); 
-    doc.autoTable({ html: '#aba-historico table' }); 
-    doc.save("vendas.pdf"); 
-}
-
-function gerarExcel() { 
-    const wb = XLSX.utils.table_to_book(document.querySelector("#aba-historico table")); 
-    XLSX.writeFile(wb, "vendas.xlsx"); 
-}
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 3000; }
+.modal-content { background: #111; padding: 30px; border-radius: 12px; border: 1px solid #d4af37; width: 400px; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+.form-group input, .form-group select { width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: #fff; }
