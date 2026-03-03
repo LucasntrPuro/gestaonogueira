@@ -5,6 +5,11 @@ const _supabase = supabase.createClient(SB_URL, SB_KEY);
 let usuarioLogado = null;
 let carrinho = [];
 
+// --- INICIALIZAÇÃO ---
+if(typeof particlesJS !== 'undefined') {
+    particlesJS("particles-js", { "particles": { "number": { "value": 60 }, "color": { "value": "#d4af37" }, "line_linked": { "color": "#d4af37" }, "move": { "speed": 1.5 } } });
+}
+
 // --- LOGIN ---
 async function fazerLogin() {
     const user = document.getElementById('user').value;
@@ -17,11 +22,11 @@ async function fazerLogin() {
     usuarioLogado = data;
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('painel-admin').style.display = 'flex';
-    document.getElementById('user-info').innerHTML = `Logado: <b>${data.login.toUpperCase()}</b> (${data.nivel})`;
+    document.getElementById('user-info').innerHTML = `Logado como: <b>${data.login.toUpperCase()}</b> (${data.nivel})`;
     
-    // Filtra visualmente o que o funcionário não pode ver
+    // Trava visual inicial
     const eGerente = data.nivel === 'gerente';
-    document.querySelectorAll('.somente-gerente').forEach(el => el.style.display = eGerente ? 'block' : 'none');
+    document.querySelectorAll('.somente-gerente').forEach(el => el.style.display = eGerente ? 'flex' : 'none');
     
     mostrarAba('vendas');
 }
@@ -35,7 +40,7 @@ function mostrarAba(aba) {
     if(aba === 'usuarios') carregarUsuarios();
 }
 
-// --- GESTÃO DE USUÁRIOS (FIX: EXCLUIR E VINCULAR LOJA) ---
+// --- USUÁRIOS (Sincronizado com Gerente/Funcionário) ---
 async function carregarUsuarios() {
     const { data } = await _supabase.from('usuarios').select('*').eq('loja_id', usuarioLogado.loja_id);
     const tbody = document.getElementById('corpo-usuarios');
@@ -50,14 +55,14 @@ async function carregarUsuarios() {
         tbody.innerHTML += `<tr>
             <td>${u.login}</td>
             <td>${u.nivel.toUpperCase()}</td>
-            <td>${u.ativo ? '✅ Ativo' : '❌ Inativo'}</td>
+            <td>${u.ativo ? 'Ativo' : 'Inativo'}</td>
             <td>${botoes}</td>
         </tr>`;
     });
 }
 
 async function salvarUsuario() {
-    if(usuarioLogado.nivel !== 'gerente') return alert("Ação restrita!");
+    if(usuarioLogado.nivel !== 'gerente') return alert("Restrito!");
     const id = document.getElementById('edit-id-usuario').value;
     const u = {
         login: document.getElementById('user-login').value,
@@ -72,8 +77,8 @@ async function salvarUsuario() {
 }
 
 async function excluirUsuario(id) {
-    if(id === usuarioLogado.id) return alert("Não pode excluir a si mesmo!");
-    if(confirm("Excluir usuário permanentemente?")) {
+    if(id === usuarioLogado.id) return alert("Não pode excluir o seu próprio usuário!");
+    if(confirm("Deseja eliminar este usuário?")) {
         await _supabase.from('usuarios').delete().eq('id', id);
         carregarUsuarios();
     }
@@ -106,55 +111,11 @@ async function salvarProduto() {
     fecharModalProduto(); carregarEstoque();
 }
 
-// --- VENDAS E ESTORNO ---
-async function finalizarVenda() {
-    if(!carrinho.length) return alert("Carrinho vazio!");
-    const total = parseFloat(document.getElementById('total-valor').innerText.replace('R$ ','').replace(',','.'));
-    const { error } = await _supabase.from('historico_vendas').insert([{
-        cliente: document.getElementById('venda-cliente').value || "Consumidor",
-        total: total,
-        produtos: carrinho.map(c => `${c.qtd_venda}x ${c.tipo}`).join(", "),
-        pagamento: document.getElementById('venda-pagamento').value,
-        data_venda: new Date().toISOString(),
-        loja_id: usuarioLogado.loja_id,
-        itens_detalhados: carrinho 
-    }]);
-    if(!error) {
-        for (const item of carrinho) {
-            await _supabase.from('produtos').update({ quantidade: item.quantidade - item.qtd_venda }).eq('id', item.id);
-        }
-        alert("Sucesso!"); carrinho = []; renderCarrinho();
-    }
-}
-
-async function carregarHistorico() {
-    const { data } = await _supabase.from('historico_vendas').select('*').eq('loja_id', usuarioLogado.loja_id).order('data_venda', {ascending: false});
-    const tbody = document.getElementById('corpo-historico');
-    tbody.innerHTML = "";
-    data.forEach(v => {
-        const btnEstorno = usuarioLogado.nivel === 'gerente' ? `<button onclick="estornarVenda(${v.id})" style="background:#ff4d4d">Estornar</button>` : 'Bloqueado';
-        tbody.innerHTML += `<tr><td>${new Date(v.data_venda).toLocaleString()}</td><td>${v.cliente}</td><td>${v.pagamento}</td><td>R$ ${Number(v.total).toFixed(2)}</td><td>${btnEstorno}</td></tr>`;
-    });
-}
-
-async function estornarVenda(id) {
-    if(!confirm("Estornar e devolver itens ao estoque?")) return;
-    const { data: v } = await _supabase.from('historico_vendas').select('itens_detalhados').eq('id', id).single();
-    if(v && v.itens_detalhados) {
-        for (const item of v.itens_detalhados) {
-            const { data: p } = await _supabase.from('produtos').select('quantidade').eq('id', item.id).single();
-            if(p) await _supabase.from('produtos').update({ quantidade: p.quantidade + item.qtd_venda }).eq('id', item.id);
-        }
-    }
-    await _supabase.from('historico_vendas').delete().eq('id', id);
-    carregarHistorico();
-}
-
-// --- PDV AUX ---
+// --- VENDAS ---
 async function adicionarAoCarrinho() {
     const cod = document.getElementById('venda-codigo').value;
     const { data: p } = await _supabase.from('produtos').select('*').eq('codigo_barras', cod).eq('loja_id', usuarioLogado.loja_id).single();
-    if(!p) return alert("Não encontrado!");
+    if(!p) return alert("Produto não encontrado!");
     carrinho.push({ ...p, qtd_venda: parseInt(document.getElementById('venda-qtd').value) || 1 });
     renderCarrinho();
     document.getElementById('venda-codigo').value = "";
@@ -170,7 +131,51 @@ function renderCarrinho() {
     document.getElementById('total-valor').innerText = `R$ ${total.toFixed(2)}`;
 }
 
-// --- MODAIS E UTILITARIOS ---
+async function finalizarVenda() {
+    if(!carrinho.length) return alert("Vazio!");
+    const totalV = parseFloat(document.getElementById('total-valor').innerText.replace('R$ ','').replace(',','.'));
+    const { error } = await _supabase.from('historico_vendas').insert([{
+        cliente: document.getElementById('venda-cliente').value || "Consumidor",
+        total: totalV,
+        produtos: carrinho.map(c => `${c.qtd_venda}x ${c.tipo}`).join(", "),
+        pagamento: document.getElementById('venda-pagamento').value,
+        data_venda: new Date().toISOString(),
+        loja_id: usuarioLogado.loja_id,
+        itens_detalhados: carrinho 
+    }]);
+    if(!error) {
+        for (const item of carrinho) {
+            await _supabase.from('produtos').update({ quantidade: item.quantidade - item.qtd_venda }).eq('id', item.id);
+        }
+        alert("Venda Finalizada!"); carrinho = []; renderCarrinho();
+    }
+}
+
+// --- HISTÓRICO E ESTORNO ---
+async function carregarHistorico() {
+    const { data } = await _supabase.from('historico_vendas').select('*').eq('loja_id', usuarioLogado.loja_id).order('data_venda', {ascending: false});
+    const tbody = document.getElementById('corpo-historico');
+    tbody.innerHTML = "";
+    data.forEach(v => {
+        const acao = usuarioLogado.nivel === 'gerente' ? `<button onclick="estornarVenda(${v.id})" style="background:#ff4d4d">Estornar</button>` : 'Bloqueado';
+        tbody.innerHTML += `<tr><td>${new Date(v.data_venda).toLocaleString()}</td><td>${v.cliente}</td><td>${v.pagamento}</td><td>R$ ${Number(v.total).toFixed(2)}</td><td>${acao}</td></tr>`;
+    });
+}
+
+async function estornarVenda(id) {
+    if(!confirm("Estornar venda e devolver produtos ao estoque?")) return;
+    const { data: v } = await _supabase.from('historico_vendas').select('itens_detalhados').eq('id', id).single();
+    if(v && v.itens_detalhados) {
+        for (const item of v.itens_detalhados) {
+            const { data: p } = await _supabase.from('produtos').select('quantidade').eq('id', item.id).single();
+            if(p) await _supabase.from('produtos').update({ quantidade: p.quantidade + item.qtd_venda }).eq('id', item.id);
+        }
+    }
+    await _supabase.from('historico_vendas').delete().eq('id', id);
+    carregarHistorico();
+}
+
+// --- MODAIS E APOIO ---
 function abrirModalProduto() { document.getElementById('edit-id-produto').value=""; document.getElementById('modal-produto').style.display='flex'; }
 function editarProduto(p) { document.getElementById('edit-id-produto').value=p.id; document.getElementById('cad-codigo').value=p.codigo_barras; document.getElementById('cad-tipo').value=p.tipo; document.getElementById('cad-preco').value=p.preco; document.getElementById('cad-qtd').value=p.quantidade; document.getElementById('modal-produto').style.display='flex'; }
 function fecharModalProduto() { document.getElementById('modal-produto').style.display='none'; }
@@ -180,5 +185,5 @@ function fecharModalUsuario() { document.getElementById('modal-usuario').style.d
 function removerItemCarrinho(i) { carrinho.splice(i,1); renderCarrinho(); }
 function atalhosTeclado(e) { if(e.key === "F9") finalizarVenda(); }
 async function excluirProduto(id) { if(confirm("Excluir?")) { await _supabase.from('produtos').delete().eq('id', id); carregarEstoque(); } }
-function gerarPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("Relatório Vendas", 10, 10); doc.autoTable({ html: '#aba-historico table' }); doc.save("vendas.pdf"); }
+function gerarPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("Vendas Gestão Nogueira", 10, 10); doc.autoTable({ html: '#aba-historico table' }); doc.save("vendas.pdf"); }
 function gerarExcel() { const wb = XLSX.utils.table_to_book(document.querySelector("#aba-historico table")); XLSX.writeFile(wb, "vendas.xlsx"); }
