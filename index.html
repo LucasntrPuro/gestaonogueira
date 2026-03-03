@@ -6,8 +6,12 @@
     <title>Gestão Nogueira | Sistema</title>
     <link rel="stylesheet" href="main.css"> 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body onkeydown="atalhosTeclado(event)">
 
@@ -24,14 +28,14 @@
 
     <div id="painel-admin" style="display: none;">
         <aside class="sidebar">
-            <h2 style="color: #d4af37; margin-bottom: 5px;">G. Nogueira</h2>
+            <h2 style="color: #d4af37;">G. Nogueira</h2>
             <div id="user-info" style="font-size: 0.8rem; color: #888; margin-bottom: 20px;"></div>
             <ul>
                 <li onclick="mostrarAba('vendas')">🛒 PDV / Vendas</li>
                 <li onclick="mostrarAba('estoque')">📦 Estoque</li>
                 <li onclick="mostrarAba('historico')">📊 Histórico</li>
                 <li onclick="mostrarAba('usuarios')" class="somente-gerente">👥 Usuários</li>
-                <li onclick="location.reload()" style="color: #ff4d4d; margin-top: auto; padding-top: 20px;">🚪 Sair</li>
+                <li onclick="location.reload()" style="color: #ff4d4d; margin-top: auto;">🚪 Sair</li>
             </ul>
         </aside>
 
@@ -39,11 +43,7 @@
             <section id="aba-vendas" class="aba">
                 <div class="pdv-grid">
                     <div class="pdv-inputs">
-                        <h2 style="color: #d4af37; margin-bottom: 20px;">Caixa Aberto</h2>
-                        <div class="form-group">
-                            <label>Cliente</label>
-                            <input type="text" id="venda-cliente" placeholder="Consumidor Final">
-                        </div>
+                        <h2 style="color: #d4af37; margin-bottom: 20px;">Caixa</h2>
                         <div class="form-group">
                             <label>Cód. Barras</label>
                             <input type="text" id="venda-codigo" placeholder="Aponte o leitor...">
@@ -72,20 +72,18 @@
                             </thead>
                             <tbody id="corpo-carrinho"></tbody>
                         </table>
-                        <div class="finalizar-box" style="margin-top: 20px;">
-                            <button onclick="finalizarVenda()" class="btn-finalizar">FINALIZAR VENDA (F9)</button>
-                        </div>
+                        <button onclick="finalizarVenda()" class="btn-finalizar">FINALIZAR (F9)</button>
                     </div>
                 </div>
             </section>
 
             <section id="aba-estoque" class="aba" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="header-aba">
                     <h2>Estoque</h2>
                     <button class="somente-gerente" onclick="abrirModalProduto()">+ NOVO PRODUTO</button>
                 </div>
                 <table class="tabela-dark">
-                    <thead><tr><th>Cód. Barras</th><th>Descrição</th><th>Preço</th><th>Qtd</th><th>Ações</th></tr></thead>
+                    <thead><tr><th>Código</th><th>Descrição</th><th>Preço</th><th>Qtd</th><th class="somente-gerente">Ações</th></tr></thead>
                     <tbody id="corpo-estoque"></tbody>
                 </table>
             </section>
@@ -99,7 +97,7 @@
             <div class="form-group"><label>Cód. Barras</label><input type="text" id="cad-codigo"></div>
             <div class="form-group"><label>Descrição</label><input type="text" id="cad-tipo"></div>
             <div class="form-group"><label>Preço</label><input type="number" id="cad-preco" step="0.01"></div>
-            <div class="form-group"><label>Estoque</label><input type="number" id="cad-qtd"></div>
+            <div class="form-group"><label>Qtd</label><input type="number" id="cad-qtd"></div>
             <div class="modal-actions">
                 <button onclick="salvarProduto()">GRAVAR</button>
                 <button onclick="fecharModalProduto()" class="btn-cancelar-modal">VOLTAR</button>
