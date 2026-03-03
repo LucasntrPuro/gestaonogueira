@@ -10,7 +10,7 @@ if(typeof particlesJS !== 'undefined') {
     particlesJS("particles-js", { "particles": { "number": { "value": 60 }, "color": { "value": "#d4af37" }, "line_linked": { "color": "#d4af37" }, "move": { "speed": 1.5 } } });
 }
 
-// --- LOGIN (Captura loja_id) ---
+// --- LOGIN (Captura o loja_id do utilizador) ---
 async function fazerLogin() {
     const user = document.getElementById('user').value;
     const pass = document.getElementById('pass').value;
@@ -20,7 +20,7 @@ async function fazerLogin() {
     if (error || !data) return alert("Acesso Negado!");
     if (!data.ativo) return alert("Usuário Inativo!");
 
-    usuarioLogado = data; // Contém o loja_id necessário para vincular os registos
+    usuarioLogado = data; // IMPORTANTE: Agora temos o usuarioLogado.loja_id salvo
     
     document.getElementById('particles-js').style.display = 'none';
     document.getElementById('tela-login').style.display = 'none';
@@ -42,17 +42,66 @@ function mostrarAba(aba) {
     if(aba === 'usuarios') carregarUsuarios();
 }
 
-// --- PDV (Venda vinculada à Loja) ---
+// --- GESTÃO DE UTILIZADORES (CORRIGIDO PARA NÃO FICAR NULL) ---
+async function carregarUsuarios() {
+    // Filtra para mostrar apenas utilizadores da mesma loja
+    const { data } = await _supabase.from('usuarios')
+        .select('*')
+        .eq('loja_id', usuarioLogado.loja_id);
+        
+    const tbody = document.getElementById('corpo-usuarios');
+    tbody.innerHTML = "";
+    data.forEach(u => {
+        const cor = u.ativo ? '#2ecc71' : '#ff4d4d';
+        tbody.innerHTML += `<tr>
+            <td>${u.login}</td>
+            <td>${u.nivel.toUpperCase()}</td>
+            <td><span style="height:10px; width:10px; background-color:${cor}; border-radius:50%; display:inline-block; margin-right:5px;"></span> ${u.ativo ? 'Ativo' : 'Inativo'}</td>
+            <td>
+                <button onclick='editarUsuario(${JSON.stringify(u)})' style="background:#3498db; margin-right:5px;">✏️</button>
+                <button onclick="excluirUsuario(${u.id})" style="background:#e74c3c;">🗑️</button>
+            </td>
+        </tr>`;
+    });
+}
+
+async function salvarUsuario() {
+    const id = document.getElementById('edit-id-usuario').value;
+    const u = {
+        login: document.getElementById('user-login').value,
+        senha: document.getElementById('user-senha').value,
+        nivel: document.getElementById('user-nivel').value,
+        ativo: document.getElementById('user-status').value === 'true',
+        // AQUI ESTÁ A CORREÇÃO: Vincula o novo utilizador à loja do administrador logado
+        loja_id: usuarioLogado.loja_id 
+    };
+
+    let res;
+    if(id) {
+        res = await _supabase.from('usuarios').update(u).eq('id', id);
+    } else {
+        res = await _supabase.from('usuarios').insert([u]);
+    }
+
+    if(res.error) {
+        alert("Erro ao salvar utilizador: " + res.error.message);
+    } else {
+        fecharModalUsuario();
+        carregarUsuarios();
+        alert("Utilizador guardado com sucesso!");
+    }
+}
+
+// --- PDV / VENDAS (Com vínculo de Loja) ---
 async function adicionarAoCarrinho() {
     const cod = document.getElementById('venda-codigo').value;
     const qtd = parseInt(document.getElementById('venda-qtd').value) || 1;
     if(!cod) return;
 
-    // Busca produto apenas da loja logada
     const { data: p } = await _supabase.from('produtos')
         .select('*')
         .eq('codigo_barras', cod)
-        .eq('loja_id', usuarioLogado.loja_id)
+        .eq('loja_id', usuarioLogado.loja_id) // Só busca produtos da loja logada
         .single();
 
     if(!p) return alert("Produto não encontrado nesta loja!");
@@ -107,7 +156,7 @@ async function finalizarVenda() {
                 .update({ quantidade: item.quantidade - item.qtd_venda })
                 .eq('id', item.id);
         }
-        alert("Venda realizada com sucesso!");
+        alert("Venda finalizada!");
         carrinho = []; 
         renderCarrinho();
     } else {
@@ -145,7 +194,7 @@ async function salvarProduto() {
         tipo: document.getElementById('cad-tipo').value,
         preco: parseFloat(document.getElementById('cad-preco').value),
         quantidade: parseInt(document.getElementById('cad-qtd').value),
-        loja_id: usuarioLogado.loja_id // VÍNCULO AUTOMÁTICO NO CADASTRO
+        loja_id: usuarioLogado.loja_id // Garante o vínculo da loja no produto
     };
 
     if(id) await _supabase.from('produtos').update(p).eq('id', id);
@@ -155,7 +204,7 @@ async function salvarProduto() {
     carregarEstoque();
 }
 
-// --- HISTÓRICO (Estorno e Filtro por Loja) ---
+// --- HISTÓRICO ---
 async function carregarHistorico() {
     const { data } = await _supabase.from('historico_vendas')
         .select('*')
@@ -176,7 +225,7 @@ async function carregarHistorico() {
 }
 
 async function excluirVenda(id) {
-    if(!confirm("Deseja estornar esta venda e devolver os itens ao stock?")) return;
+    if(!confirm("Deseja estornar esta venda?")) return;
     
     const { data: venda } = await _supabase.from('historico_vendas').select('itens_detalhados').eq('id', id).single();
     
@@ -191,45 +240,8 @@ async function excluirVenda(id) {
     carregarHistorico();
 }
 
-// --- UTILIZADORES (Filtro por Loja) ---
-async function carregarUsuarios() {
-    const { data } = await _supabase.from('usuarios')
-        .select('*')
-        .eq('loja_id', usuarioLogado.loja_id);
-        
-    const tbody = document.getElementById('corpo-usuarios');
-    tbody.innerHTML = "";
-    data.forEach(u => {
-        const cor = u.ativo ? '#2ecc71' : '#ff4d4d';
-        tbody.innerHTML += `<tr>
-            <td>${u.login}</td>
-            <td>${u.nivel}</td>
-            <td><span style="height:10px; width:10px; background-color:${cor}; border-radius:50%; display:inline-block"></span> ${u.ativo ? 'Ativo' : 'Inativo'}</td>
-            <td><button onclick='editarUsuario(${JSON.stringify(u)})'>✏️</button></td>
-        </tr>`;
-    });
-}
-
-async function salvarUsuario() {
-    const id = document.getElementById('edit-id-usuario').value;
-    const u = {
-        login: document.getElementById('user-login').value,
-        senha: document.getElementById('user-senha').value,
-        nivel: document.getElementById('user-nivel').value,
-        ativo: document.getElementById('user-status').value === 'true',
-        loja_id: usuarioLogado.loja_id // Garante que novos usuários pertençam à mesma loja
-    };
-    if(id) await _supabase.from('usuarios').update(u).eq('id', id);
-    else await _supabase.from('usuarios').insert([u]);
-    fecharModalUsuario(); carregarUsuarios();
-}
-
 // --- UTILITÁRIOS ---
-function abrirModalProduto() { 
-    document.getElementById('edit-id-produto').value=""; 
-    document.getElementById('cad-codigo').value="";
-    document.getElementById('modal-produto').style.display='flex'; 
-}
+function abrirModalProduto() { document.getElementById('edit-id-produto').value=""; document.getElementById('modal-produto').style.display='flex'; }
 function editarProduto(p) {
     document.getElementById('edit-id-produto').value = p.id;
     document.getElementById('cad-codigo').value = p.codigo_barras;
@@ -239,7 +251,38 @@ function editarProduto(p) {
     document.getElementById('modal-produto').style.display='flex';
 }
 function fecharModalProduto() { document.getElementById('modal-produto').style.display='none'; }
+
+function abrirModalUsuario() { 
+    document.getElementById('edit-id-usuario').value=""; 
+    document.getElementById('user-login').value="";
+    document.getElementById('user-senha').value="";
+    document.getElementById('modal-usuario').style.display='flex'; 
+}
+function editarUsuario(u) {
+    document.getElementById('edit-id-usuario').value = u.id;
+    document.getElementById('user-login').value = u.login;
+    document.getElementById('user-senha').value = u.senha;
+    document.getElementById('user-nivel').value = u.nivel;
+    document.getElementById('user-status').value = u.ativo.toString();
+    document.getElementById('modal-usuario').style.display = 'flex';
+}
 function fecharModalUsuario() { document.getElementById('modal-usuario').style.display='none'; }
+
 function removerItemCarrinho(i) { carrinho.splice(i,1); renderCarrinho(); }
 function verificarParcelas() { document.getElementById('campo-parcelas').style.display = (document.getElementById('venda-pagamento').value === "Cartão de Crédito") ? "block" : "none"; }
 function atalhosTeclado(e) { if(e.key === "F9") finalizarVenda(); }
+
+async function excluirUsuario(id) { if(confirm("Eliminar utilizador?")) { await _supabase.from('usuarios').delete().eq('id', id); carregarUsuarios(); } }
+async function excluirProduto(id) { if(confirm("Eliminar produto?")) { await _supabase.from('produtos').delete().eq('id', id); carregarEstoque(); } }
+
+function gerarPDF() { 
+    const { jsPDF } = window.jspdf; 
+    const doc = new jsPDF(); 
+    doc.text("Vendas Gestão Nogueira", 10, 10); 
+    doc.autoTable({ html: '#aba-historico table' }); 
+    doc.save("vendas.pdf"); 
+}
+function gerarExcel() { 
+    const wb = XLSX.utils.table_to_book(document.querySelector("#aba-historico table")); 
+    XLSX.writeFile(wb, "vendas.xlsx"); 
+}
