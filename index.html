@@ -9,9 +9,6 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body onkeydown="atalhosTeclado(event)">
 
@@ -44,116 +41,54 @@
                 <div class="pdv-grid">
                     <div class="pdv-inputs">
                         <h2 style="color: #d4af37; margin-bottom: 20px;">Caixa</h2>
-                        <div class="form-group">
-                            <label>Cliente</label>
-                            <input type="text" id="venda-cliente" placeholder="Consumidor Final">
-                        </div>
-                        <div class="form-group">
-                            <label>Cód. Barras</label>
-                            <input type="text" id="venda-codigo" placeholder="Aponte o leitor...">
-                        </div>
-                        <div class="form-group">
-                            <label>Qtd</label>
-                            <input type="number" id="venda-qtd" value="1">
-                        </div>
+                        <input type="text" id="venda-cliente" placeholder="Cliente">
+                        <input type="text" id="venda-codigo" placeholder="Cód. Barras">
+                        <input type="number" id="venda-qtd" value="1">
                         <button onclick="adicionarAoCarrinho()" style="width: 100%;">ADICIONAR</button>
                     </div>
                     <div class="pdv-lista">
                         <div class="total-display">
-                            <p>Total da Venda</p>
+                            <p>Total</p>
                             <h1 id="total-valor">R$ 0,00</h1>
                         </div>
                         <table class="tabela-dark">
-                            <thead>
-                                <tr><th>Produto</th><th>Qtd</th><th>Preço</th><th>Total</th><th>Ações</th></tr>
-                            </thead>
+                            <thead><tr><th>Item</th><th>Qtd</th><th>Preço</th><th>Ações</th></tr></thead>
                             <tbody id="corpo-carrinho"></tbody>
                         </table>
-                        <div class="finalizar-box" style="margin-top:20px; display:flex; gap:10px;">
-                            <select id="venda-pagamento" onchange="verificarParcelas()">
-                                <option value="Dinheiro">Dinheiro</option>
-                                <option value="Pix">Pix</option>
-                                <option value="Cartão de Débito">Cartão de Débito</option>
-                                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                            </select>
-                            <button onclick="finalizarVenda()" class="btn-finalizar" style="flex:1;">FINALIZAR (F9)</button>
-                        </div>
+                        <button onclick="finalizarVenda()" class="btn-finalizar">FINALIZAR (F9)</button>
                     </div>
                 </div>
             </section>
 
-            <section id="aba-estoque" class="aba" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2>Estoque</h2>
-                    <button class="somente-gerente" onclick="abrirModalProduto()">+ NOVO PRODUTO</button>
-                </div>
-                <table class="tabela-dark">
-                    <thead><tr><th>Cód. Barras</th><th>Descrição</th><th>Preço</th><th>Qtd</th><th class="somente-gerente">Ações</th></tr></thead>
-                    <tbody id="corpo-estoque"></tbody>
-                </table>
+            <section id="aba-estoque" class="aba" style="display:none;">
+                <h2>Estoque</h2>
+                <table class="tabela-dark"><tbody id="corpo-estoque"></tbody></table>
+            </section>
+            
+            <section id="aba-historico" class="aba" style="display:none;">
+                <h2>Histórico</h2>
+                <table class="tabela-dark"><thead><tr><th>Data</th><th>Cliente</th><th>Total</th><th>Ações</th></tr></thead><tbody></tbody></table>
             </section>
 
-            <section id="aba-historico" class="aba" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2>Histórico de Vendas</h2>
-                    <div>
-                        <button onclick="gerarPDF()">PDF</button>
-                        <button onclick="gerarExcel()">Excel</button>
-                    </div>
-                </div>
-                <table class="tabela-dark">
-                    <thead><tr><th>Data</th><th>Cliente</th><th>Pagamento</th><th>Total</th><th>Ações</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </section>
-
-            <section id="aba-usuarios" class="aba" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <section id="aba-usuarios" class="aba" style="display:none;">
+                <div style="display:flex; justify-content:space-between;">
                     <h2>Usuários</h2>
-                    <button class="somente-gerente" onclick="abrirModalUsuario()">+ NOVO USUÁRIO</button>
+                    <button onclick="abrirModalUsuario()">+ NOVO</button>
                 </div>
-                <table class="tabela-dark">
-                    <thead><tr><th>Login</th><th>Nível</th><th>Status</th><th>Ações</th></tr></thead>
-                    <tbody id="corpo-usuarios"></tbody>
-                </table>
+                <table class="tabela-dark"><thead><tr><th>Login</th><th>Nível</th><th>Status</th><th>Ações</th></tr></thead><tbody id="corpo-usuarios"></tbody></table>
             </section>
         </main>
-    </div>
-
-    <div id="modal-produto" class="modal">
-        <div class="modal-content">
-            <h3 class="modal-titulo">Produto</h3>
-            <input type="hidden" id="edit-id-produto">
-            <div class="form-group"><label>Cód. Barras</label><input type="text" id="cad-codigo"></div>
-            <div class="form-group"><label>Descrição</label><input type="text" id="cad-tipo"></div>
-            <div class="form-group"><label>Preço</label><input type="number" id="cad-preco" step="0.01"></div>
-            <div class="form-group"><label>Qtd</label><input type="number" id="cad-qtd"></div>
-            <div class="modal-actions" style="margin-top:20px; display:flex; gap:10px;">
-                <button onclick="salvarProduto()">GRAVAR</button>
-                <button onclick="fecharModalProduto()" style="background:#444;">VOLTAR</button>
-            </div>
-        </div>
     </div>
 
     <div id="modal-usuario" class="modal">
         <div class="modal-content">
             <h3 class="modal-titulo">Usuário</h3>
             <input type="hidden" id="edit-id-usuario">
-            <div class="form-group"><label>Login</label><input type="text" id="user-login"></div>
-            <div class="form-group"><label>Senha</label><input type="password" id="user-senha"></div>
-            <div class="form-group"><label>Nível</label>
-                <select id="user-nivel">
-                    <option value="operador">Operador</option>
-                    <option value="gerente">Gerente</option>
-                </select>
-            </div>
-            <div class="form-group"><label>Status</label>
-                <select id="user-status">
-                    <option value="true">Ativo</option>
-                    <option value="false">Inativo</option>
-                </select>
-            </div>
-            <div class="modal-actions" style="margin-top:20px; display:flex; gap:10px;">
+            <input type="text" id="user-login" placeholder="Login">
+            <input type="password" id="user-senha" placeholder="Senha">
+            <select id="user-nivel"><option value="operador">Operador</option><option value="gerente">Gerente</option></select>
+            <select id="user-status"><option value="true">Ativo</option><option value="false">Inativo</option></select>
+            <div class="modal-actions">
                 <button onclick="salvarUsuario()">GRAVAR</button>
                 <button onclick="fecharModalUsuario()" style="background:#444;">VOLTAR</button>
             </div>
