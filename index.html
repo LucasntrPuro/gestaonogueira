@@ -16,23 +16,24 @@
     <div id="tela-login" class="container-central">
         <div class="login-box">
             <h1>Gestão <span>Nogueira</span></h1>
-            <input type="text" id="user" placeholder="Usuário">
+            <input type="text" id="user" placeholder="Usuário" autofocus>
             <input type="password" id="pass" placeholder="Senha">
             <button onclick="fazerLogin()">ENTRAR</button>
         </div>
     </div>
 
     <div id="painel-admin" style="display: none;">
-        <nav class="sidebar">
-            <div id="user-info"></div>
+        <aside class="sidebar">
+            <h2 style="color: #d4af37; margin-bottom: 5px;">G. Nogueira</h2>
+            <div id="user-info" style="font-size: 0.8rem; color: #888; margin-bottom: 20px;"></div>
             <ul>
                 <li onclick="mostrarAba('vendas')">🛒 PDV / Vendas</li>
                 <li onclick="mostrarAba('estoque')">📦 Estoque</li>
                 <li onclick="mostrarAba('historico')">📊 Histórico</li>
                 <li onclick="mostrarAba('usuarios')" class="somente-gerente">👥 Usuários</li>
-                <li onclick="location.reload()" style="color: #ff4d4d; margin-top: 20px;">🚪 Sair</li>
+                <li onclick="location.reload()" style="color: #ff4d4d; margin-top: auto; padding-top: 20px;">🚪 Sair</li>
             </ul>
-        </nav>
+        </aside>
 
         <main class="conteudo">
             <section id="aba-vendas" class="aba">
@@ -45,13 +46,13 @@
                         </div>
                         <div class="form-group">
                             <label>Cód. Barras</label>
-                            <input type="text" id="venda-codigo" placeholder="Aponte o leitor...">
+                            <input type="text" id="venda-codigo" placeholder="Aponte o leitor..." onkeypress="if(event.key==='Enter') adicionarAoCarrinho()">
                         </div>
                         <div class="form-group">
                             <label>Qtd</label>
                             <input type="number" id="venda-qtd" value="1">
                         </div>
-                        <button onclick="adicionarAoCarrinho()" style="width: 100%;">ADICIONAR</button>
+                        <button onclick="adicionarAoCarrinho()" style="width: 100%; margin-top: 10px;">ADICIONAR (Enter)</button>
                     </div>
 
                     <div class="pdv-lista">
@@ -59,31 +60,48 @@
                             <p>Total da Venda</p>
                             <h1 id="total-valor">R$ 0,00</h1>
                         </div>
-                        <table class="tabela-dark">
-                            <thead>
-                                <tr>
-                                    <th>Produto</th>
-                                    <th>Qtd</th>
-                                    <th>Preço</th>
-                                    <th>Total</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="corpo-carrinho"></tbody>
-                        </table>
-                        <div class="finalizar-box">
-                            <select id="venda-pagamento" onchange="verificarParcelas()">
-                                <option value="Dinheiro">Dinheiro</option>
-                                <option value="Pix">Pix</option>
-                                <option value="Cartão de Débito">Débito</option>
-                                <option value="Cartão de Crédito">Crédito</option>
-                            </select>
-                            <div id="campo-parcelas" style="display:none;">
-                                <input type="number" id="venda-parcelas" value="1" min="1">x
+                        <div class="tabela-container">
+                            <table class="tabela-dark">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Qtd</th>
+                                        <th>Preço</th>
+                                        <th>Total</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="corpo-carrinho"></tbody>
+                            </table>
+                        </div>
+                        <div class="finalizar-box" style="margin-top: 20px;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                <select id="venda-pagamento" onchange="verificarParcelas()" style="flex: 2; padding: 10px; background: #111; color: #fff; border: 1px solid #333;">
+                                    <option value="Dinheiro">Dinheiro</option>
+                                    <option value="Pix">Pix</option>
+                                    <option value="Cartão de Débito">Débito</option>
+                                    <option value="Cartão de Crédito">Crédito</option>
+                                </select>
+                                <div id="campo-parcelas" style="display:none; flex: 1;">
+                                    <input type="number" id="venda-parcelas" value="1" min="1" style="width: 100%; padding: 10px; background: #111; color: #fff; border: 1px solid #333;">
+                                </div>
                             </div>
                             <button onclick="finalizarVenda()" class="btn-finalizar">FINALIZAR VENDA (F9)</button>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section id="aba-estoque" class="aba" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Estoque</h2>
+                    <button class="somente-gerente" onclick="abrirModalProduto()">+ NOVO PRODUTO</button>
+                </div>
+                <div class="tabela-container">
+                    <table class="tabela-dark">
+                        <thead><tr><th>Cód. Barras</th><th>Descrição</th><th>Preço</th><th>Qtd</th><th class="somente-gerente">Ações</th></tr></thead>
+                        <tbody id="corpo-estoque"></tbody>
+                    </table>
                 </div>
             </section>
         </main>
@@ -93,12 +111,12 @@
         <div class="modal-content">
             <h3 class="modal-titulo">Produto</h3>
             <input type="hidden" id="edit-id-produto">
-            <input type="text" id="cad-codigo" placeholder="Código">
-            <input type="text" id="cad-tipo" placeholder="Descrição">
-            <input type="number" id="cad-preco" placeholder="Preço">
-            <input type="number" id="cad-qtd" placeholder="Qtd">
+            <div class="form-group"><label>Cód. Barras</label><input type="text" id="cad-codigo"></div>
+            <div class="form-group"><label>Descrição</label><input type="text" id="cad-tipo"></div>
+            <div class="form-group"><label>Preço</label><input type="number" id="cad-preco" step="0.01"></div>
+            <div class="form-group"><label>Qtd</label><input type="number" id="cad-qtd"></div>
             <div class="modal-actions">
-                <button onclick="salvarProduto()">GRAVAR</button>
+                <button onclick="salvarProduto()" class="btn-salvar-modal">GRAVAR</button>
                 <button onclick="fecharModalProduto()" class="btn-cancelar-modal">VOLTAR</button>
             </div>
         </div>
