@@ -60,8 +60,7 @@ function renderCarrinho() {
     carrinho.forEach((item, i) => {
         const sub = item.preco * item.qtd_venda;
         t += sub;
-        // Exibe o tamanho junto ao nome no carrinho para facilitar
-        tbody.innerHTML += `<tr><td>${item.tipo} ${item.tamanho ? '('+item.tamanho+')' : ''}</td><td>${item.qtd_venda}</td><td>R$ ${item.preco.toFixed(2)}</td><td>R$ ${sub.toFixed(2)}</td>
+        tbody.innerHTML += `<tr><td>${item.tipo}</td><td>${item.qtd_venda}</td><td>R$ ${item.preco.toFixed(2)}</td><td>R$ ${sub.toFixed(2)}</td>
         <td><button onclick="removerItemCarrinho(${i})">❌</button></td></tr>`;
     });
     document.getElementById('total-valor').innerText = `R$ ${t.toFixed(2).replace('.',',')}`;
@@ -73,7 +72,7 @@ async function finalizarVenda() {
     const { error } = await _supabase.from('historico_vendas').insert([{
         cliente: document.getElementById('venda-cliente').value || "Consumidor",
         total: parseFloat(totalT.replace('R$ ','').replace(',','.')),
-        produtos: carrinho.map(c => `${c.qtd_venda}x ${c.tipo} ${c.tamanho||''}`).join(", "),
+        produtos: carrinho.map(c => `${c.qtd_venda}x ${c.tipo}`).join(", "),
         pagamento: document.getElementById('venda-pagamento').value,
         data_venda: new Date().toLocaleString('sv-SE'),
         loja_id: LOJA_ID_ATUAL 
@@ -100,7 +99,7 @@ async function salvarProduto() {
     const d = { 
         codigo_barras: document.getElementById('cad-codigo').value, 
         tipo: document.getElementById('cad-tipo').value, 
-        tamanho: document.getElementById('cad-tamanho').value,
+        tamanho: document.getElementById('cad-tamanho').value, // Inserção de tamanho
         preco: parseFloat(document.getElementById('cad-preco').value), 
         quantidade: parseInt(document.getElementById('cad-qtd').value),
         loja_id: LOJA_ID_ATUAL 
