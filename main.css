@@ -1,60 +1,245 @@
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-body { background-color: #000; color: #fff; overflow-x: hidden; }
+/* --- RESET E CONFIGURAÇÕES BÁSICAS --- */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    font-family: 'Poppins', sans-serif; 
+}
 
-/* ANIMAÇÃO DE FUNDO */
+body { 
+    background-color: #000; 
+    color: #fff; 
+    overflow-x: hidden; 
+}
+
+/* --- ANIMAÇÃO DE FUNDO (PARTÍCULAS) --- */
 #particles-js {
-    position: fixed; width: 100%; height: 100%;
-    background-color: #000; z-index: 1; top: 0; left: 0;
+    position: fixed; 
+    width: 100%; 
+    height: 100%;
+    background-color: #000; 
+    z-index: 1; 
+    top: 0; 
+    left: 0;
 }
 
-/* TELA DE LOGIN */
+/* --- TELA DE LOGIN --- */
 .container-central {
-    height: 100vh; display: flex; justify-content: center; align-items: center;
-    position: relative; z-index: 10; background: transparent;
+    height: 100vh; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    position: relative; 
+    z-index: 10; 
+    background: transparent;
 }
+
 .login-box {
-    background: rgba(17, 17, 17, 0.9); padding: 40px; border-radius: 12px;
-    border: 1px solid #d4af37; text-align: center; width: 350px;
-    backdrop-filter: blur(10px); box-shadow: 0 0 30px rgba(212,175,55,0.2);
+    background: rgba(17, 17, 17, 0.9); 
+    padding: 40px; 
+    border-radius: 12px;
+    border: 1px solid #d4af37; 
+    text-align: center; 
+    width: 350px;
+    backdrop-filter: blur(10px); 
+    box-shadow: 0 0 30px rgba(212,175,55,0.2);
 }
+
 .login-box input {
-    width: 100%; padding: 12px; margin: 10px 0;
-    background: #222; border: 1px solid #333; color: #fff; border-radius: 4px;
+    width: 100%; 
+    padding: 12px; 
+    margin: 10px 0;
+    background: #222; 
+    border: 1px solid #333; 
+    color: #fff; 
+    border-radius: 4px;
 }
-.login-box button {
-    width: 100%; padding: 12px; background: #d4af37;
-    border: none; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px;
+
+/* --- ESTRUTURA PRINCIPAL (PAINEL ADM) --- */
+#painel-admin {
+    display: flex;
+    height: 100vh;
+    position: relative;
+    z-index: 10;
 }
 
-/* LAYOUT SISTEMA */
-.admin-layout { display: flex; height: 100vh; position: relative; z-index: 20; background: #000; }
-.sidebar { width: 250px; background: #111; border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
-.sidebar nav button { width: 100%; padding: 15px; background: none; border: none; color: #ccc; text-align: left; cursor: pointer; border-radius: 4px; margin-bottom: 5px; }
-.sidebar nav button:hover { background: #222; color: #d4af37; }
-.content { flex: 1; padding: 30px; overflow-y: auto; background: #0a0a0a; }
+.sidebar {
+    width: 250px;
+    background: #0a0a0a;
+    border-right: 1px solid #222;
+    display: flex;
+    flex-direction: column;
+}
 
-/* TABELAS E COMPONENTES */
-.tabela-container { background: #111; border-radius: 8px; padding: 10px; margin-top: 20px; border: 1px solid #222; }
-table { width: 100%; border-collapse: collapse; }
-th { text-align: left; padding: 15px; color: #d4af37; border-bottom: 2px solid #222; }
-td { padding: 12px 15px; border-bottom: 1px solid #1a1a1a; font-size: 0.9rem; }
-.acoes-container { display: flex; gap: 10px; justify-content: center; }
-td button { background: none; border: none; cursor: pointer; font-size: 1.1rem; }
+.sidebar ul {
+    list-style: none;
+    padding: 20px;
+}
 
-/* PDV */
-.pdv-grid { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
-.pdv-inputs { background: #111; padding: 20px; border-radius: 8px; border: 1px solid #222; }
+.sidebar li {
+    padding: 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.3s;
+    color: #bbb;
+}
+
+.sidebar li:hover {
+    background: rgba(212, 175, 55, 0.1);
+    color: #d4af37;
+}
+
+.conteudo {
+    flex: 1;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.7);
+    overflow-y: auto;
+}
+
+/* --- TABELAS DARK --- */
+.tabela-dark {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.tabela-dark th {
+    background: #111;
+    color: #d4af37;
+    padding: 15px;
+    text-align: left;
+    font-size: 0.85rem;
+    border-bottom: 2px solid #222;
+}
+
+.tabela-dark td {
+    padding: 15px;
+    border-bottom: 1px solid #222;
+    color: #eee;
+}
+
+.tabela-dark tr:hover {
+    background: #0d0d0d;
+}
+
+/* --- COMPONENTES DO PDV --- */
+.pdv-container {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 30px;
+}
+
+.pdv-inputs {
+    background: #111;
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #222;
+}
+
+.total-display {
+    background: #1a1a1a;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border-left: 5px solid #d4af37;
+    text-align: right;
+}
+
+.total-display p { font-size: 0.9rem; color: #888; }
+.total-display h1 { color: #d4af37; font-size: 3rem; }
+
+/* --- FORMULÁRIOS --- */
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
-.form-group input, .form-group select { width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: #fff; border-radius: 4px; }
-.total-display { background: #1a1a1a; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #d4af37; text-align: right; }
-.total-display h1 { color: #d4af37; font-size: 2.5rem; }
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 12px;
+    background: #222;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 4px;
+}
 
-/* MODAIS */
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 3000; }
-.modal-content { background: #111; padding: 30px; border-radius: 12px; width: 450px; border: 1px solid #d4af37; }
-.modal-titulo { color: #d4af37; font-size: 1.5rem; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #222; padding-bottom: 15px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.modal-actions { display: flex; gap: 15px; margin-top: 25px; }
-.btn-salvar-modal { flex: 1; background: #d4af37; color: #000; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-.btn-cancelar-modal { flex: 1; background: #333; color: #fff; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+/* --- BOTÕES --- */
+button {
+    background: #d4af37;
+    color: #000;
+    border: none;
+    padding: 12px 20px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #f1c40f;
+    transform: translateY(-2px);
+}
+
+.btn-cancelar-modal { background: #333; color: #fff; }
+.btn-cancelar-modal:hover { background: #444; }
+
+/* --- MODAIS (CORRIGIDO PARA CENTRALIZAR) --- */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none; /* Controlado pelo JS */
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+}
+
+.modal-content {
+    background: #111;
+    padding: 40px;
+    border-radius: 15px;
+    width: 450px;
+    border: 1px solid #d4af37;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+}
+
+.modal-titulo {
+    color: #d4af37;
+    margin-bottom: 25px;
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.modal-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+}
+
+.modal-actions button {
+    flex: 1;
+}
+
+/* --- CABEÇALHOS DE ABAS --- */
+.header-aba {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #222;
+    padding-bottom: 15px;
+}
+
+.header-aba h2 {
+    color: #d4af37;
+}
+
+/* --- RESPONSIVIDADE BÁSICA --- */
+@media (max-width: 900px) {
+    .pdv-container {
+        grid-template-columns: 1fr;
+    }
+}
