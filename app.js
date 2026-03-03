@@ -2,6 +2,7 @@ const SB_URL = 'https://btzfjrpbzigqsifbmjnb.supabase.co';
 const SB_KEY = 'sb_publishable_aOC-9tDq5jpRyZM3swEmSA_2anmUryO'; 
 const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
+// ID fixo da Isadora Nogueira Store para garantir o vínculo
 const LOJA_ID_ATUAL = '8777a06a-e35f-4c3a-b94d-e8c155a1899f';
 
 let usuarioLogado = null;
@@ -26,6 +27,10 @@ async function fazerLogin() {
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('painel-admin').style.display = 'flex';
     document.getElementById('user-info').innerText = `Operador: ${data.login.toUpperCase()}`;
+    
+    // Inicia a atualização de presença assim que logar
+    atualizarPresenca(); 
+    
     aplicarPermissoesVisuais();
     mostrarAba('vendas');
 }
@@ -71,25 +76,6 @@ function renderCarrinho() {
     });
     document.getElementById('total-valor').innerText = `R$ ${t.toFixed(2).replace('.',',')}`;
 }
-
-function abrirModalEditarItem(idx) {
-    const item = carrinho[idx];
-    document.getElementById('edit-carrinho-index').value = idx;
-    document.getElementById('edit-carrinho-nome').value = item.tipo;
-    document.getElementById('edit-carrinho-qtd').value = item.qtd_venda;
-    document.getElementById('edit-carrinho-preco').value = item.preco;
-    document.getElementById('modal-editar-item').style.display = 'flex';
-}
-
-function salvarEdicaoCarrinho() {
-    const idx = document.getElementById('edit-carrinho-index').value;
-    carrinho[idx].qtd_venda = parseInt(document.getElementById('edit-carrinho-qtd').value);
-    carrinho[idx].preco = parseFloat(document.getElementById('edit-carrinho-preco').value);
-    fecharModalCarrinho();
-    renderCarrinho();
-}
-
-function fecharModalCarrinho() { document.getElementById('modal-editar-item').style.display = 'none'; }
 
 async function finalizarVenda() {
     if(!carrinho.length) return alert("Carrinho vazio!");
@@ -184,32 +170,15 @@ async function carregarUsuarios() {
     });
 }
 
-async function salvarUsuario() {
-    const id = document.getElementById('edit-id-usuario').value;
-    const d = { 
-        login: document.getElementById('user-login').value, 
-        senha: document.getElementById('user-senha').value, 
-        nivel: document.getElementById('user-nivel').value, 
-        ativo: document.getElementById('user-status').value === "true",
-        loja_id: LOJA_ID_ATUAL 
-    };
-    if(id) await _supabase.from('usuarios').update(d).eq('id', id).eq('loja_id', LOJA_ID_ATUAL); 
-    else await _supabase.from('usuarios').insert([d]);
-    fecharModalUsuario(); carregarUsuarios();
-}
-
-// --- AUXILIARES E EXCLUSÕES ---
+// --- AUXILIARES ---
 function prepararEdicaoProduto(p) { document.getElementById('edit-id-produto').value = p.id; document.getElementById('cad-codigo').value = p.codigo_barras; document.getElementById('cad-tipo').value = p.tipo; document.getElementById('cad-preco').value = p.preco; document.getElementById('cad-qtd').value = p.quantidade; document.getElementById('modal-produto').style.display='flex'; }
 function prepararEdicaoUsuario(u) { document.getElementById('edit-id-usuario').value = u.id; document.getElementById('user-login').value = u.login; document.getElementById('user-senha').value = u.senha; document.getElementById('user-nivel').value = u.nivel; document.getElementById('user-status').value = u.ativo.toString(); document.getElementById('modal-usuario').style.display='flex'; }
-function abrirModalProduto() { document.getElementById('edit-id-produto').value=""; document.getElementById('modal-produto').style.display='flex'; }
-function abrirModalUsuario() { document.getElementById('edit-id-usuario').value=""; document.getElementById('modal-usuario').style.display='flex'; }
 function fecharModalProduto() { document.getElementById('modal-produto').style.display='none'; }
 function fecharModalUsuario() { document.getElementById('modal-usuario').style.display='none'; }
 function removerItemCarrinho(i) { carrinho.splice(i,1); renderCarrinho(); }
 function verificarParcelas() { document.getElementById('campo-parcelas').style.display = (document.getElementById('venda-pagamento').value === "Cartão de Crédito") ? "block" : "none"; }
-function gerarPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("Vendas Gestão Nogueira", 10, 10); doc.autoTable({ html: '#aba-historico table' }); doc.save("vendas.pdf"); }
-function gerarExcel() { const wb = XLSX.utils.table_to_book(document.querySelector("#aba-historico table")); XLSX.writeFile(wb, "vendas.xlsx"); }
 
+// --- EXCLUSÕES COM ESTORNO ---
 async function excluirVenda(id) { 
     if(confirm("Excluir esta venda e estornar produtos ao estoque?")) { 
         try {
@@ -234,5 +203,20 @@ async function excluirVenda(id) {
 
 async function excluirUsuario(id) { if(confirm("Excluir?")) { await _supabase.from('usuarios').delete().eq('id', id).eq('loja_id', LOJA_ID_ATUAL); carregarUsuarios(); } }
 async function excluirProduto(id) { if(confirm("Excluir?")) { await _supabase.from('produtos').delete().eq('id', id).eq('loja_id', LOJA_ID_ATUAL); carregarEstoque(); } }
+
+// --- MONITORAMENTO DE PRESENÇA (HEARTBEAT) ---
+async function atualizarPresenca() {
+    if (usuarioLogado && usuarioLogado.id) {
+        await _supabase
+            .from('usuarios')
+            .update({ ultima_atividade: new Date().toISOString() })
+            .eq('id', usuarioLogado.id);
+    }
+}
+
+// Atualiza a cada 30 segundos
+setInterval(atualizarPresenca, 30000);
+
+// Atalhos e Eventos
 function atalhosTeclado(e) { if(e.key === "F1") mostrarAba('vendas'); if(e.key === "F2") finalizarVenda(); }
 window.onkeydown = atalhosTeclado;
