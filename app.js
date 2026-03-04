@@ -114,7 +114,49 @@ function imprimirCupom(pgto, total) {
     win.document.write(`<html><body style="font-family:'Courier New',monospace; width:280px; padding:5px; font-size:12px;"><center>============================<br><b>ISADORA NOGUEIRA STORE</b><br>============================</center><br>DATA: ${agora}<br>CLIENTE: ${cliente.toUpperCase()}<br>PGTO: ${pgto}<br>----------------------------<br>${carrinho.map(i => i.qtd_venda + "x " + i.tipo.substring(0,15) + "... R$ " + (i.preco*i.qtd_venda).toFixed(2)).join('<br>')}<br>----------------------------<br><b>TOTAL GERAL: ${total}</b><br><br><center>Obrigado pela preferência!</center><script>window.onload=function(){window.print();window.close();};</script></body></html>`);
     win.document.close();
 }
+// 1. Abre o modal e preenche os campos com os dados atuais
+function abrirModalEditarItem(index) {
+    const item = carrinho[index];
+    
+    // Armazena o índice no campo oculto para saber quem estamos editando
+    document.getElementById('edit-carrinho-index').value = index;
+    
+    // Preenche os campos do modal
+    document.getElementById('edit-carrinho-nome').value = item.tipo; // Apenas visual
+    document.getElementById('edit-carrinho-qtd').value = item.qtd_venda;
+    document.getElementById('edit-carrinho-preco').value = item.preco;
+    
+    // Mostra o modal
+    document.getElementById('modal-editar-item').style.display = 'flex';
+}
 
+// 2. Fecha o modal de edição do carrinho
+function fecharModalCarrinho() {
+    document.getElementById('modal-editar-item').style.display = 'none';
+}
+
+// 3. Salva a nova Quantidade e o novo Valor (O que você pediu)
+function salvarEdicaoCarrinho() {
+    // Pega o índice que salvamos ao abrir
+    const index = document.getElementById('edit-carrinho-index').value;
+    
+    // Pega os novos valores digitados
+    const novaQtd = parseInt(document.getElementById('edit-carrinho-qtd').value);
+    const novoPreco = parseFloat(document.getElementById('edit-carrinho-preco').value);
+
+    // Validação básica
+    if (novaQtd > 0 && !isNaN(novoPreco)) {
+        // Atualiza apenas Quantidade e Preço no carrinho
+        carrinho[index].qtd_venda = novaQtd;
+        carrinho[index].preco = novoPreco;
+        
+        // Fecha o modal e atualiza a tabela na tela
+        fecharModalCarrinho();
+        renderCarrinho();
+    } else {
+        alert("Por favor, insira valores válidos!");
+    }
+}
 // --- ESTOQUE E USUÁRIOS ---
 async function carregarEstoque() {
     const { data } = await _supabase.from('produtos').select('*').eq('loja_id', LOJA_ID_ATUAL).order('tipo');
