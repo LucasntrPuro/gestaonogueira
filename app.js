@@ -68,21 +68,21 @@ async function adicionarAoCarrinho() {
     const cod = document.getElementById('venda-codigo').value;
     const qtd = parseInt(document.getElementById('venda-qtd').value) || 1;
     
-    // Filtro essencial: busca o produto apenas na loja do usuário logado
-    const { data: p } = await _supabase
-        .from('produtos')
+    // Alteração: Adicionado o filtro .eq('loja_id', usuarioLogado.loja_id)
+    const { data: p } = await _supabase.from('produtos')
         .select('*')
         .eq('codigo_barras', cod)
-        .eq('loja_id', usuarioLogado.loja_id)
-        .single();
+        .eq('loja_id', usuarioLogado.loja_id) 
+        .maybeSingle(); // maybeSingle evita erro caso existam duplicatas globais
     
-    if (!p) return alert("Produto não encontrado nesta unidade!");
+    if (!p) return alert("Produto não cadastrado nesta loja!");
     if (p.quantidade < qtd) return alert("Estoque insuficiente! Disponível: " + p.quantidade);
     
     carrinho.push({ ...p, qtd_venda: qtd });
     renderCarrinho();
     document.getElementById('venda-codigo').value = "";
     document.getElementById('venda-codigo').focus();
+
 }
 
 function renderCarrinho() {
